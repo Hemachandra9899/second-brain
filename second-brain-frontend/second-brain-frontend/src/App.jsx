@@ -5,12 +5,10 @@ import { Header } from "./pages/Header.jsx";
 import { Add } from "./pages/Add.jsx";
 import { Brain } from "./pages/Brain.jsx";
 
-export const App = () => {
+export default function App() {   // ✅ default export
   return (
     <div>
       {/* Header visible on all pages */}
-      
-
       <Routes>
         <Route path="/" element={<Header />} />
         <Route path="/add" element={<Add />} />
@@ -20,4 +18,4 @@ export const App = () => {
       </Routes>
     </div>
   );
-};
+}
