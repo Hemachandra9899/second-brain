@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 
 export const Brain = () => {
   const reduxTasks = useSelector((state) => state.tasks.list);
-
   // 50 placeholders, fill from Redux tasks
   const tasks = Array.from({ length: 50 }, (_, i) => {
     const reduxTask = reduxTasks[i];

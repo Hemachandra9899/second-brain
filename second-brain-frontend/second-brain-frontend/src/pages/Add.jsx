@@ -27,7 +27,7 @@ export const Add = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md">
-        <div className=" ">
+        <div className="">
             <Link to="/"><button className="cursor-pointer">BACK</button></Link>
             
         </div>
