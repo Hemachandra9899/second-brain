@@ -1,76 +1,91 @@
-import { Router } from 'express';
-import Note from '../models/noteModel.js';
+import express from "express";
+import { index } from "../services/embedding.js"; 
 
-const route = Router();
+const router = express.Router();
 
-// GET all notes or search notes by title/description
-route.get('/note', async (req, res) => {
+// ==========================
+// POST /note → Save note + embedding
+// ==========================
+router.post("/note", async (req, res) => {
     try {
-        const { query } = req.query;
-        let notes;
-        if (query) {
-            // search in title or description
-            notes = await Note.find({
-                $or: [
-                    { title: { $regex: query, $options: 'i' } },
-                    { description: { $regex: query, $options: 'i' } }
-                ]
-            });
-        } else {
-            notes = await Note.find();
-        }
-        res.json(notes);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// POST new note
-route.post('/note', async (req, res) => {
-    try {
-        const { title, description } = req.body;
-        const newNote = new Note({
-            title,
-            description
-        });
-
-        await newNote.save();
-        res.status(201).json({ message: "Note saved successfully", note: newNote });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// DELETE a note by id
-route.delete('/note/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deletedNote = await Note.findByIdAndDelete(id);
-        if (!deletedNote) return res.status(404).json({ message: "Note not found" });
-        res.json({ message: "Note deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// UPDATE a note by id
-route.put('/note/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, description } = req.body;
-
-        const updatedNote = await Note.findByIdAndUpdate(
+      const { title, description } = req.body;
+      const text = `${title} ${description}`;
+  
+      // 1️⃣ generate mock embedding for testing
+      const embedding = Array(1536).fill(0).map(() => Math.random());
+  
+      const id = Date.now().toString();
+  
+      // 2️⃣ upsert correctly
+      const result = await index.upsert({
+        vectors: [
+          {
             id,
-            { title, description },
-            { new: true, runValidators: true } // returns the updated document
-        );
-
-        if (!updatedNote) return res.status(404).json({ message: "Note not found" });
-
-        res.json({ message: "Note updated successfully", note: updatedNote });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+            values: embedding,
+            metadata: { title, description }
+          }
+        ],
+        namespace: ""
+      });
+  
+      console.log("✅ Pinecone upsert result:", result);
+  
+      res.status(201).json({
+        message: "Note saved successfully",
+        note: { id, title, description }
+      });
+    } catch (err) {
+      console.error("❌ Error saving note:", err);
+      res.status(500).json({ error: "Failed to save note" });
     }
+  });
+  
+// ==========================
+// GET /note?query=... → Semantic search
+// ==========================
+router.get("/note", async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) return res.status(400).json({ message: "Query required" });
+
+    const queryVector = Array(1536).fill(0).map(() => Math.random());
+
+    const searchResponse = await index.query({
+      topK: 5,
+      vector: queryVector,
+      includeMetadata: true,
+      namespace: ""
+    });
+
+    const matches = searchResponse.matches || [];
+
+    res.json(matches.map(match => ({
+      id: match.id,
+      score: match.score,
+      title: match.metadata?.title,
+      description: match.metadata?.description
+    })));
+  } catch (err) {
+    console.error("❌ Error searching notes:", err);
+    res.status(500).json({ message: "Error searching notes" });
+  }
 });
 
-export default route;
+// ==========================
+// DELETE /note/:id
+// ==========================
+router.delete("/note/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await index.delete({
+      ids: [id],
+      namespace: ""
+    });
+    res.json({ message: "Note deleted successfully" });
+  } catch (err) {
+    console.error("❌ Error deleting note:", err);
+    res.status(500).json({ error: "Failed to delete note" });
+  }
+});
+
+export default router;
