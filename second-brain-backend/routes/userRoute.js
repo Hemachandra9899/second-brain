@@ -9,25 +9,30 @@ const router = express.Router();
 router.post("/note", async (req, res) => {
     try {
       const { title, description } = req.body;
-      const text = `${title} ${description}`;
-  
+      
       // 1️⃣ generate mock embedding for testing
       const embedding = Array(1536).fill(0).map(() => Math.random());
-  
-      const id = Date.now().toString();
-  
-      // 2️⃣ upsert correctly
-      const result = await index.upsert({
-        vectors: [
-          {
-            id,
-            values: embedding,
-            metadata: { title, description }
-          }
-        ],
-        namespace: ""
-      });
-  
+    
+      const id = `note_${Date.now()}`; // Generate unique ID
+      
+      console.log("✅ Generated embedding for note");
+      
+      // 2️⃣ Prepare record for Pinecone
+      const records = [
+        {
+          id: id,
+          values: embedding, // Use the 1536-dimensional embedding
+          metadata: { 
+            title: title,
+            description: description,
+            createdAt: new Date().toISOString()
+          },
+        }
+      ];
+      
+      // 3️⃣ Upsert to Pinecone
+      const result = await index.upsert(records);
+      
       console.log("✅ Pinecone upsert result:", result);
   
       res.status(201).json({
@@ -38,8 +43,7 @@ router.post("/note", async (req, res) => {
       console.error("❌ Error saving note:", err);
       res.status(500).json({ error: "Failed to save note" });
     }
-  });
-  
+});
 // ==========================
 // GET /note?query=... → Semantic search
 // ==========================
@@ -49,6 +53,7 @@ router.get("/note", async (req, res) => {
     if (!query) return res.status(400).json({ message: "Query required" });
 
     const queryVector = Array(1536).fill(0).map(() => Math.random());
+    console.log("✅ Pinecone query vector:", queryVector);
 
     const searchResponse = await index.query({
       topK: 5,
