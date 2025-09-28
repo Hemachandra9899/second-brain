@@ -1,5 +1,5 @@
 import express from "express";
-import { index } from "../services/embedding.js"; 
+import { getFreeEmbedding,index } from "../services/embedding.js"; 
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.post("/note", async (req, res) => {
       const { title, description } = req.body;
       
       // 1️⃣ generate mock embedding for testing
-      const embedding = Array(1536).fill(0).map(() => Math.random());
+      const embedding = await getFreeEmbedding(`${title} ${description}`);
     
       const id = `note_${Date.now()}`; // Generate unique ID
       
@@ -48,33 +48,34 @@ router.post("/note", async (req, res) => {
 // GET /note?query=... → Semantic search
 // ==========================
 router.get("/note", async (req, res) => {
-  try {
-    const { query } = req.query;
-    if (!query) return res.status(400).json({ message: "Query required" });
-
-    const queryVector = Array(1536).fill(0).map(() => Math.random());
-    console.log("✅ Pinecone query vector:", queryVector);
-
-    const searchResponse = await index.query({
-      topK: 5,
-      vector: queryVector,
-      includeMetadata: true,
-      namespace: ""
-    });
-
-    const matches = searchResponse.matches || [];
-
-    res.json(matches.map(match => ({
-      id: match.id,
-      score: match.score,
-      title: match.metadata?.title,
-      description: match.metadata?.description
-    })));
-  } catch (err) {
-    console.error("❌ Error searching notes:", err);
-    res.status(500).json({ message: "Error searching notes" });
-  }
-});
+    try {
+      const { query } = req.query;
+      if (!query) return res.status(400).json({ message: "Query required" });
+  
+      const queryVector = Array(384).fill(0).map(() => Math.random());
+      console.log("✅ Pinecone query vector generated");
+  
+      const searchResponse = await index.query({
+        vector: queryVector,
+        topK: 5,
+        includeMetadata: true,
+        // Removed namespace parameter
+        
+      });
+  
+      const matches = searchResponse.matches || [];
+  
+      res.json(matches.map(match => ({
+        id: match.id,
+        score: match.score,
+        title: match.metadata?.title,
+        description: match.metadata?.description
+      })));
+    } catch (err) {
+      console.error("❌ Error searching notes:", err);
+      res.status(500).json({ message: "Error searching notes" });
+    }
+  });
 
 // ==========================
 // DELETE /note/:id
