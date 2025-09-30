@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config(); // Must be first
-
+import {client} from "./config/dbconfig.js";
+import authrouter from "./routes/authRoute.js";
 import express from "express";
 import cors from "cors";
 import router from "./routes/userRoute.js"; // your new semantic search routes
@@ -12,6 +13,9 @@ const PORT = process.env.PORT || 5005;
 app.use(cors());
 app.use(express.json());
 app.use("/", router);
+app.use("/auth",authrouter);
+//connect to the pg database
+const result = await client.query("SELECT * FROM users");
 
 app.listen(PORT, async () => {
   try {

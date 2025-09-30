@@ -93,6 +93,7 @@ export const Header = () => {
               className="flex-1 resize-none outline-none text-gray-700 text-base placeholder-gray-400"
               placeholder="Ask whatever you want..."
               rows={3}
+              
             />
             <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 py-3 rounded-xl shadow hover:opacity-90 transition">
               →
