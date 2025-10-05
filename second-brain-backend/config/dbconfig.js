@@ -14,4 +14,4 @@ await client.connect();
 
 console.log("✅ Connected to PostgreSQL");
 
-export { client };   // <-- named export
+export { client };   
