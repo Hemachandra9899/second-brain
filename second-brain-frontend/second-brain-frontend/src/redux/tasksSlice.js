@@ -8,41 +8,54 @@ const taskSlice = createSlice({
     list: [],
   },
   reducers: {
+    // ✅ Add a new task (with email from auth state)
     addTask: (state, action) => {
-      const { title, description } = action.payload;
+      const { title, description, email } = action.payload;
+
       const newTask = {
         title,
         description,
+        email, // 👈 include email with task
       };
 
       state.list.push(newTask);
 
       // 🔥 send to backend
-      axios.post("http://localhost:5005/note", newTask)
+      axios.post("http://localhost:5006/note", newTask)
         .then(() => console.log("Task saved to DB"))
         .catch((err) => console.error("Error saving task:", err));
     },
 
+    // ✅ Remove specific task (with email for security)
     removeTask: (state, action) => {
-      const taskId = action.payload;
-      state.list = state.list.filter((task) => task.id !== taskId);
+      const { id, email } = action.payload;
+      state.list = state.list.filter((task) => task.id !== id);
 
-      // 🔥 remove from backend
-      axios.delete(`http://localhost:3000/note`)
+      axios.delete(`http://localhost:5006/note/${id}`, {
+        data: { email }, // 👈 send email to backend for validation
+      })
         .then(() => console.log("Task removed from DB"))
         .catch((err) => console.error("Error removing task:", err));
     },
 
-    clearTasks: (state) => {
+    // ✅ Clear all tasks for this email
+    clearTasks: (state, action) => {
+      const { email } = action.payload;
       state.list = [];
 
-      // 🔥 clear backend
-      axios.delete("http://localhost:3000/note")
+      axios.delete("http://localhost:5006/note", {
+        data: { email }, // 👈 clear tasks only for this email
+      })
         .then(() => console.log("All tasks cleared from DB"))
         .catch((err) => console.error("Error clearing tasks:", err));
+    },
+
+    // ✅ Replace Redux state with tasks fetched from DB
+    setTasks: (state, action) => {
+      state.list = action.payload;
     },
   },
 });
 
-export const { addTask, removeTask, clearTasks } = taskSlice.actions;
+export const { addTask, removeTask, clearTasks, setTasks } = taskSlice.actions;
 export default taskSlice.reducer;

@@ -45,26 +45,6 @@ export const Header = () => {
           </p> */}
         </header>
 
-        {/* Prompt Cards in Brain-style
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full max-w-6xl">
-          {prompts.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => togglePrompt(p.id)}
-              className={`flex flex-col items-start p-5 rounded-2xl shadow-md transition transform hover:-translate-y-0.5 text-left ${
-                p.selected
-                  ? "bg-gradient-to-br from-purple-100 to-pink-50 border border-purple-300"
-                  : "bg-white border border-dashed border-gray-300"
-              }`}
-            >
-              <h3 className="text-sm font-medium text-gray-800">{p.text}</h3>
-              <span className="mt-3 inline-block text-xs px-2 py-1 rounded-full border">
-                {p.selected ? "selected" : "click to select"}
-              </span>
-            </button>
-          ))}
-        </div> */}
-
         {/* Input Box */}
         <div className="w-full max-w-3xl mt-10">
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex items-end space-x-3 hover:border-purple-300 transition">

@@ -49,7 +49,7 @@ export const Login = () => {
 
         if (loginUser.fulfilled.match(result)) {
             console.log('Login successful, navigating to dashboard');
-            navigate('/dashboard');
+            navigate('/brain');
         } else {
             console.log('Login failed:', result.payload);
         }
