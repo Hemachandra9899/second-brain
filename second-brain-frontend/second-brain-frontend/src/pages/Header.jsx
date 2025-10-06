@@ -1,31 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Plus, Brain, CircleUser } from "lucide-react";
 
 export const Header = () => {
-  const store = [
-    "Write a to-do list for a personal project or task",
-    "Generate an email to reply to a job offer",
-    "Summarise this article or text for me in one paragraph",
-    "How does AI work in a technical capacity",
-  ];
 
-  // make prompts clickable / toggle filled
-  const initialPrompts = store.map((text, i) => ({
-    id: i + 1,
-    text,
-    selected: false,
-  }));
-
-  const [prompts, setPrompts] = useState(initialPrompts);
-
-  const togglePrompt = (id) => {
-    setPrompts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, selected: !p.selected } : p
-      )
-    );
-  };
+ 
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -44,7 +23,7 @@ export const Header = () => {
         </button>
 
         <div className="mt-auto p-3 rounded-full bg-white/20 hover:bg-white/30 transition cursor-pointer">
-          <CircleUser className="w-7 h-7" />
+          <Link to="/login"><CircleUser className="w-7 h-7" /></Link>
         </div>
       </aside>
 
@@ -61,12 +40,12 @@ export const Header = () => {
           <h2 className="text-xl font-medium text-gray-600">
             What would you like to know?
           </h2>
-          <p className="text-gray-500 text-sm">
+          {/* <p className="text-gray-500 text-sm">
             Choose a prompt below or type your own question.
-          </p>
+          </p> */}
         </header>
 
-        {/* Prompt Cards in Brain-style */}
+        {/* Prompt Cards in Brain-style
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full max-w-6xl">
           {prompts.map((p) => (
             <button
@@ -84,7 +63,7 @@ export const Header = () => {
               </span>
             </button>
           ))}
-        </div>
+        </div> */}
 
         {/* Input Box */}
         <div className="w-full max-w-3xl mt-10">

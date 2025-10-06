@@ -10,7 +10,11 @@ import { initPinecone } from "./services/embedding.js";
 const app = express();
 const PORT = process.env.PORT || 5005;
 
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:5173', // Your React app URL
+  credentials: true
+}));
 app.use(express.json());
 app.use("/", router);
 app.use("/auth",authrouter);
