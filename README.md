@@ -27,5 +27,6 @@ Unlike plain keyword search, it understands **meaning & context** to give you **
 https://github.com/Hemachandra9899/second-brain.git
 cd second-brain
 npm install   # or pip install -r requirements.txt
+npm run dev # running the project
 ```
 
