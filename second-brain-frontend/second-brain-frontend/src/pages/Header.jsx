@@ -6,9 +6,9 @@ import { useSelector } from "react-redux";
 
 export const Header = () => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
+  const [answer, setAnswer] = useState(""); // <-- string instead of array
   const [loading, setLoading] = useState(false);
-  const email = useSelector((state) => state.auth.user?.email); // optional if you want user-specific search
+  const email = useSelector((state) => state.auth.user?.email);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -18,13 +18,14 @@ export const Header = () => {
     try {
       const res = await axios.get("http://localhost:5006/note", {
         params: { query, email },
+        responseType: "text", // 👈 expect plain text, not JSON
       });
 
       console.log("✅ Search results:", res.data);
-      setResults(res.data);
+      setAnswer(res.data); // <-- store string
     } catch (err) {
       console.error("❌ Search error:", err);
-      setResults([]);
+      setAnswer("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -91,25 +92,11 @@ export const Header = () => {
           {/* Loading */}
           {loading && <p className="text-gray-500 mt-3">Loading results...</p>}
 
-          {/* Results */}
-          {!loading && results.length > 0 && (
-            <div className="mt-4 space-y-3 w-full">
-              {results.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 bg-white rounded-xl shadow border border-gray-200"
-                >
-                  <h3 className="font-semibold text-gray-800">{item.title}</h3>
-                  <p className="text-gray-600">{item.description}</p>
-                  <small className="text-gray-400">Score: {item.score?.toFixed(2)}</small>
-                </div>
-              ))}
+          {/* Answer */}
+          {!loading && answer && (
+            <div className="mt-4 p-4 bg-white rounded-xl shadow border border-gray-200">
+              <p className="text-gray-700 whitespace-pre-line">{answer}</p>
             </div>
-          )}
-
-          {/* No results */}
-          {!loading && results.length === 0 && query.trim() !== "" && (
-            <p className="text-gray-400 mt-3">No results found.</p>
           )}
         </div>
       </main>
