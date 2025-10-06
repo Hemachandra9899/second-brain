@@ -78,18 +78,19 @@ router.get("/note", async (req, res) => {
 
     // 3️⃣ Ask Groq model to summarize
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "qwen/qwen3-32b",
       messages: [
         {
           role: "system",
           content:
-            "You are an assistant that summarizes semantic search results into a natural, conversational answer.",
+            "You are a helpful and friendly assistant. Your task is to read user queries and the retrieved notes, then provide a clear, concise, and human-like answer in natural language. Avoid repeating raw note data; instead, summarize and combine the relevant information into a coherent response. If the notes are insufficient, politely indicate that and offer general advice or suggestions."
         },
         {
           role: "user",
-          content: `User asked: "${query}". Here are the retrieved notes:\n${formattedResults}\n\nPlease give a helpful, human-like answer.`,
-        },
-      ],
+          content: `The user asked: "${query}". Here are the relevant notes retrieved from the database:\n${formattedResults}\n\nPlease provide a single, well-written, conversational answer that addresses the user's query, integrating the notes where appropriate.`
+        }
+      ]
+      
     });
 
     const aiAnswer = completion.choices[0].message.content.trim();
