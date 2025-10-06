@@ -78,18 +78,19 @@ router.get("/note", async (req, res) => {
 
     // 3️⃣ Ask Groq model to summarize
     const completion = await groq.chat.completions.create({
-      model: "qwen/qwen3-32b",
+      model: "gemma2-9b-it",
       messages: [
         {
           role: "system",
           content:
-            "You are a helpful and friendly assistant. Your task is to read user queries and the retrieved notes, then provide a clear, concise, and human-like answer in natural language. Avoid repeating raw note data; instead, summarize and combine the relevant information into a coherent response. If the notes are insufficient, politely indicate that and offer general advice or suggestions."
+            "You are a helpful and friendly assistant. Your task is to read user queries and the retrieved notes, then provide a clear, concise, and human-like answer in natural language. Avoid repeating raw note data; instead, summarize and combine the relevant information into a coherent response. If the notes are insufficient, politely indicate that and offer general advice or suggestions. If the user's query does not match any notes in the database, clearly state: 'I do not have this task in the list, but here’s what I can suggest:' and then provide helpful guidance or suggestions."
         },
         {
           role: "user",
           content: `The user asked: "${query}". Here are the relevant notes retrieved from the database:\n${formattedResults}\n\nPlease provide a single, well-written, conversational answer that addresses the user's query, integrating the notes where appropriate.`
         }
       ]
+      
       
     });
 
