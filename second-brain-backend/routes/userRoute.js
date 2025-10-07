@@ -90,8 +90,7 @@ router.get("/note", async (req, res) => {
           content: `The user asked: "${query}". Here are the relevant notes retrieved from the database:\n${formattedResults}\n\nPlease provide a single, well-written, conversational answer that addresses the user's query, integrating the notes where appropriate.`
         }
       ]
-      
-      
+
     });
 
     const aiAnswer = completion.choices[0].message.content.trim();
