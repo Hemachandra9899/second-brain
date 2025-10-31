@@ -5,6 +5,7 @@ import { Header } from "./pages/Header.jsx";
 import { Add } from "./pages/Add.jsx";
 import { Brain } from "./pages/Brain.jsx";
 import { Login } from "./pages/loginpage.jsx";
+import {RegisterPage} from "./pages/registerpage.jsx"
 export default function App() {   // ✅ default export
   return (
     <div>
@@ -15,6 +16,7 @@ export default function App() {   // ✅ default export
         <Route path="/add" element={<Add />} />
         <Route path="/brain" element={<Brain />} />
         <Route path="login" element={<Login />}/>
+        <Route path="register" element={<RegisterPage/>}/>
         {/* fallback */}
         <Route path="*" element={<div className="p-6">Page Not Found</div>} />
       </Routes>

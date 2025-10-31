@@ -78,7 +78,7 @@ router.get("/note", async (req, res) => {
 
     // 3️⃣ Ask Groq model to summarize
     const completion = await groq.chat.completions.create({
-      model: "gemma2-9b-it",
+      model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "system",

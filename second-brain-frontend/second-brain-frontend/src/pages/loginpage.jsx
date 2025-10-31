@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 import { loginUser, clearError } from '../redux/authSlice';
 
 export const Login = () => {
@@ -123,9 +123,9 @@ export const Login = () => {
 
                 <p className="text-center text-gray-600 mt-6">
                     Don't have an account?{' '}
-                    <a href="/register" className="text-blue-600 font-semibold hover:underline">
+                    <Link to="/register" className="text-blue-600 font-semibold hover:underline">
                         Register here
-                    </a>
+                    </Link>
                 </p>
             </div>
         </div>
