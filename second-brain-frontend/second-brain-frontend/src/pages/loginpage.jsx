@@ -15,7 +15,7 @@ export const Login = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/dashboard');
+            navigate('/');
         }
     }, [isAuthenticated, navigate]);
 
@@ -49,7 +49,7 @@ export const Login = () => {
 
         if (loginUser.fulfilled.match(result)) {
             console.log('Login successful, navigating to dashboard');
-            navigate('/brain');
+            navigate('/');
         } else {
             console.log('Login failed:', result.payload);
         }

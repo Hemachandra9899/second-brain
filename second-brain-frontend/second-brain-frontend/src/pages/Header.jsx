@@ -60,9 +60,9 @@ export const Header = () => {
         {/* Header Section */}
         <header className="mb-8 text-center space-y-3">
           <h1 className="text-4xl font-extrabold tracking-tight">
-            Hi there,{" "}
+            Hi am your,{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">
-              Chandra
+              Seocnd Brain
             </span>
           </h1>
           <h2 className="text-xl font-medium text-gray-600">
