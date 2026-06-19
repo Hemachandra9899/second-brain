@@ -12,9 +12,12 @@ export type TaskCardData = {
 
 type TaskCardProps = {
   task: TaskCardData;
+  onDone?: (task: TaskCardData) => void;
+  onDelete?: (task: TaskCardData) => void;
+  onSyncNotion?: (task: TaskCardData) => void;
 };
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onDone, onDelete, onSyncNotion }: TaskCardProps) {
   return (
     <GlassCard className="space-y-3">
       <div className="flex items-start justify-between gap-3">
@@ -41,6 +44,29 @@ export function TaskCard({ task }: TaskCardProps) {
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span>{task.priority || "Normal"}</span>
         <span>{task.due_date ? `Due ${task.due_date}` : "No date"}</span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <button
+          onClick={() => onDone?.(task)}
+          className="rounded-full bg-emerald-100 px-3 py-2 text-xs font-medium text-emerald-700"
+        >
+          Done
+        </button>
+
+        <button
+          onClick={() => onSyncNotion?.(task)}
+          className="rounded-full bg-sky-100 px-3 py-2 text-xs font-medium text-sky-700"
+        >
+          Notion
+        </button>
+
+        <button
+          onClick={() => onDelete?.(task)}
+          className="rounded-full bg-rose-100 px-3 py-2 text-xs font-medium text-rose-700"
+        >
+          Delete
+        </button>
       </div>
     </GlassCard>
   );

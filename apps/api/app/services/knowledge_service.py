@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Task, KnowledgeItem, KnowledgeChunk
 from app.services.embedding_service import embed_text
-from app.services.pinecone_store import upsert_text
+from app.services.pinecone_store import upsert_text, delete_vector
 
 
 def index_task_as_knowledge(db: Session, task: Task):
@@ -69,3 +69,20 @@ Source: {task.source}
             "notion_page_id": task.notion_page_id or "",
         },
     )
+
+
+def delete_task_from_knowledge(db: Session, task_id: str):
+    item_id = f"task_{task_id}"
+    chunk_id = f"{item_id}_chunk_0"
+
+    delete_vector(chunk_id)
+
+    chunk = db.query(KnowledgeChunk).filter(KnowledgeChunk.id == chunk_id).first()
+    if chunk:
+        db.delete(chunk)
+
+    item = db.query(KnowledgeItem).filter(KnowledgeItem.id == item_id).first()
+    if item:
+        db.delete(item)
+
+    db.commit()

@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { PillChip } from "@/components/PillChip";
 import { TaskCard, TaskCardData } from "@/components/TaskCard";
-import { createTask, getTasks } from "@/lib/api";
+import { createTask, deleteTask, getTasks, patchTask, syncTaskToNotion } from "@/lib/api";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskCardData[]>([]);
@@ -35,6 +35,24 @@ export default function TasksPage() {
 
     setTitle("");
     setDescription("");
+    await loadTasks();
+  }
+
+  async function markDone(task: TaskCardData) {
+    await patchTask(task.id, {
+      status: "Done",
+      sync_to_notion: Boolean(task.notion_page_id),
+    });
+    await loadTasks();
+  }
+
+  async function remove(task: TaskCardData) {
+    await deleteTask(task.id);
+    await loadTasks();
+  }
+
+  async function syncNotion(task: TaskCardData) {
+    await syncTaskToNotion(task.id);
     await loadTasks();
   }
 
@@ -87,7 +105,13 @@ export default function TasksPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            onDone={markDone}
+            onDelete={remove}
+            onSyncNotion={syncNotion}
+          />
         ))}
       </section>
     </AppShell>

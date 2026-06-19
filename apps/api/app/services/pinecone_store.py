@@ -46,3 +46,8 @@ def search(embedding: list[float], top_k: int = 8, filter: dict | None = None):
         include_metadata=True,
         filter=filter,
     )
+
+
+def delete_vector(vector_id: str):
+    index = get_index()
+    index.delete(ids=[vector_id])

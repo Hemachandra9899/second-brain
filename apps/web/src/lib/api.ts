@@ -54,6 +54,52 @@ export async function createTask(input: {
   return apiPost<Task>("/tasks", input);
 }
 
+export async function patchTask(
+  id: string,
+  input: {
+    title?: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    due_date?: string;
+    sync_to_notion?: boolean;
+  }
+) {
+  const res = await fetch(`${API_URL}/tasks/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update task");
+  }
+
+  return res.json();
+}
+
+export async function deleteTask(id: string) {
+  const res = await fetch(`${API_URL}/tasks/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to delete task");
+  }
+
+  return res.json();
+}
+
+export async function getScheduledTasks() {
+  return apiGet<Task[]>("/tasks/scheduled");
+}
+
+export async function syncTaskToNotion(id: string) {
+  return apiPost<Task>(`/tasks/${id}/sync/notion`, {});
+}
+
 export async function askAssistant(message: string) {
   return apiPost<{ answer: string }>("/chat", { message });
 }
