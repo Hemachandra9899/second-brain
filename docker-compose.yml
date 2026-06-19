@@ -1,0 +1,50 @@
+services:
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: second-brain-web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: second-brain-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./apps/api/app:/app/app
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: second-brain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-secondbrain}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secondbrain_password}
+      POSTGRES_DB: ${POSTGRES_DB:-secondbrain}
+    ports:
+      - "5432:5432"
+    volumes:
+      - secondbrain-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: second-brain-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+volumes:
+  secondbrain-postgres:
