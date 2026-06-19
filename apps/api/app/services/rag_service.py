@@ -1,9 +1,12 @@
+from sqlalchemy.orm import Session
+
 from app.services.embedding_service import embed_text
 from app.services.pinecone_store import search
 from app.services.llm_nvidia import ask_llm
+from app.services.graph_service import extract_entities_and_relationships, get_related_graph_context
 
 
-def ask_knowledge_base(query: str):
+def ask_knowledge_base(db: Session, query: str):
     query_embedding = embed_text(query, input_type="query")
 
     results = search(
@@ -17,6 +20,7 @@ def ask_knowledge_base(query: str):
 
     for match in matches:
         metadata = match.get("metadata", {}) if isinstance(match, dict) else match.metadata
+
         source_blocks.append(
             {
                 "source_type": metadata.get("source_type"),
@@ -27,7 +31,20 @@ def ask_knowledge_base(query: str):
             }
         )
 
-    context = "\n\n".join(
+    query_graph = extract_entities_and_relationships(
+        title="user_query",
+        text=query,
+    )
+
+    entity_names = [
+        entity.get("name")
+        for entity in query_graph.get("entities", [])
+        if entity.get("name")
+    ]
+
+    graph_context = get_related_graph_context(db=db, entity_names=entity_names)
+
+    vector_context = "\n\n".join(
         [
             f"Source: {s['title']}\n{s['text']}"
             for s in source_blocks
@@ -35,16 +52,26 @@ def ask_knowledge_base(query: str):
         ]
     )
 
+    graph_context_text = "\n".join(
+        [
+            f"{rel['from']} --{rel['type']}--> {rel['to']}"
+            for rel in graph_context
+        ]
+    )
+
     prompt = f"""
 User question:
 {query}
 
-Relevant Second Brain context:
-{context}
+Semantic search context:
+{vector_context}
 
-Answer the user using only the context when possible.
+Related graph context:
+{graph_context_text}
+
+Answer the user using the context.
 Be practical, short, and action-oriented.
-If context is not enough, say what is missing.
+If context is missing, say exactly what is missing.
 """.strip()
 
     answer = ask_llm(prompt)
@@ -52,4 +79,5 @@ If context is not enough, say what is missing.
     return {
         "answer": answer,
         "sources": source_blocks,
+        "graph_context": graph_context,
     }
