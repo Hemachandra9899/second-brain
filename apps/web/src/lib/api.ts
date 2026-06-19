@@ -101,7 +101,7 @@ export async function syncTaskToNotion(id: string) {
 }
 
 export async function askAssistant(message: string) {
-  return apiPost<{ answer: string }>("/chat", { message });
+  return apiPost<{ answer: string; mood?: unknown }>("/chat", { message });
 }
 
 export async function askKnowledge(query: string) {
@@ -132,6 +132,17 @@ export async function createKnowledgeItem(input: {
   source_id?: string;
 }) {
   return apiPost<KnowledgeItem>("/knowledge/items", input);
+}
+
+export async function detectMood(text: string, recentContext?: string) {
+  return apiPost<{ mood: string; theme: unknown }>("/mood/detect", {
+    text,
+    recent_context: recentContext,
+  });
+}
+
+export async function getLatestMood() {
+  return apiGet<{ mood: string; theme: unknown; created_at?: string | null }>("/mood/latest");
 }
 
 export async function deleteKnowledgeItem(id: string) {

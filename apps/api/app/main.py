@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import Base, engine
 from app.db.migrate import run_migrations
-from app.routers import health, tasks, chat, notion, whatsapp, knowledge
+from app.routers import health, tasks, chat, notion, whatsapp, knowledge, mood
 
 
 Base.metadata.create_all(bind=engine)
@@ -25,3 +25,4 @@ app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(notion.router, prefix="/integrations/notion", tags=["notion"])
 app.include_router(whatsapp.router, prefix="/integrations/whatsapp", tags=["whatsapp"])
 app.include_router(knowledge.router, prefix="/knowledge", tags=["knowledge"])
+app.include_router(mood.router, prefix="/mood", tags=["mood"])
