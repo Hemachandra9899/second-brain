@@ -1,0 +1,26 @@
+services:
+  openwa-api:
+    build:
+      context: ./external/OpenWA
+      dockerfile: Dockerfile
+    container_name: openwa-api
+    restart: unless-stopped
+    ports:
+      - "2785:2785"
+    environment:
+      NODE_ENV: production
+      PORT: 2785
+      API_MASTER_KEY: ${OPENWA_API_KEY:-change_this_master_key}
+      DATABASE_TYPE: sqlite
+      DATABASE_NAME: /app/data/openwa.sqlite
+      SESSION_DATA_PATH: /app/data/sessions
+      PUPPETEER_HEADLESS: "true"
+      PUPPETEER_ARGS: "--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu"
+      WEBHOOK_TIMEOUT: 10000
+      WEBHOOK_MAX_RETRIES: 3
+      WEBHOOK_RETRY_DELAY: 5000
+    volumes:
+      - openwa-data:/app/data
+
+volumes:
+  openwa-data:

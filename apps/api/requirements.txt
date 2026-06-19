@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+sqlalchemy
+psycopg[binary]
+python-dotenv
+httpx
+openai
+pinecone
+notion-client
+redis
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
