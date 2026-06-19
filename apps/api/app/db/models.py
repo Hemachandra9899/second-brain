@@ -1,8 +1,6 @@
-import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import DateTime, String, Text, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -10,10 +8,52 @@ from app.db.session import Base
 class Task(Base):
     __tablename__ = "tasks"
 
-    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[str] = mapped_column(String(50), default="todo")
-    notion_page_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    status: Mapped[str] = mapped_column(String(50), default="Todo")
+    priority: Mapped[str] = mapped_column(String(50), default="Normal")
+    due_date: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    source: Mapped[str] = mapped_column(String(50), default="second_brain")
+    notion_page_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class KnowledgeItem(Base):
+    __tablename__ = "knowledge_items"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    source_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    raw_text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    item_id: Mapped[str] = mapped_column(String, ForeignKey("knowledge_items.id"))
+    chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
+    pinecone_vector_id: Mapped[str | None] = mapped_column(String(300), nullable=True)
+
+    item = relationship("KnowledgeItem")
+
+
+class Entity(Base):
+    __tablename__ = "entities"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(300), nullable=False)
+
+
+class Relationship(Base):
+    __tablename__ = "relationships"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    from_entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"))
+    to_entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"))
+    relation_type: Mapped[str] = mapped_column(String(100), nullable=False)
