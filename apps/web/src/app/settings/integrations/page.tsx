@@ -51,9 +51,18 @@ export default function IntegrationsPage() {
         </GlassCard>
 
         <GlassCard>
-          <h2 className="text-xl font-semibold">OpenWA</h2>
+          <h2 className="text-xl font-semibold">WhatsApp / OpenWA</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Later, use WhatsApp as an input channel for tasks and memory capture.
+            Connect OpenWA locally and route WhatsApp messages into Second Brain.
+          </p>
+
+          <div className="mt-4 rounded-2xl bg-sky-50 p-4 text-xs text-slate-600">
+            <p>Webhook URL:</p>
+            <code className="break-all">http://host.docker.internal:8000/integrations/whatsapp/webhook</code>
+          </div>
+
+          <p className="mt-4 text-sm text-slate-600">
+            Use this after OpenWA QR session is connected.
           </p>
         </GlassCard>
       </div>

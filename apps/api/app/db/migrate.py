@@ -40,4 +40,23 @@ def run_migrations():
             """))
             print("Created table: mood_events")
 
+    if "whatsapp_messages" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS whatsapp_messages (
+                    id VARCHAR PRIMARY KEY,
+                    phone VARCHAR(100),
+                    sender_name VARCHAR(200),
+                    direction VARCHAR(20) DEFAULT 'inbound',
+                    message_text TEXT NOT NULL,
+                    detected_intent VARCHAR(50),
+                    detected_mood VARCHAR(50),
+                    created_task_id VARCHAR(200),
+                    created_knowledge_item_id VARCHAR(200),
+                    raw_payload TEXT,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: whatsapp_messages")
+
     print("Migration complete")

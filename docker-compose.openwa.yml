@@ -1,5 +1,5 @@
 services:
-  openwa-api:
+  openwa:
     build:
       context: ./external/OpenWA
       dockerfile: Dockerfile
@@ -8,19 +8,24 @@ services:
     ports:
       - "2785:2785"
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 2785
-      API_MASTER_KEY: ${OPENWA_API_KEY:-change_this_master_key}
       DATABASE_TYPE: sqlite
       DATABASE_NAME: /app/data/openwa.sqlite
+      DATABASE_SYNCHRONIZE: "true"
+      ENGINE_TYPE: whatsapp-web.js
       SESSION_DATA_PATH: /app/data/sessions
       PUPPETEER_HEADLESS: "true"
       PUPPETEER_ARGS: "--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu"
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/data/media
       WEBHOOK_TIMEOUT: 10000
       WEBHOOK_MAX_RETRIES: 3
-      WEBHOOK_RETRY_DELAY: 5000
+      QUEUE_ENABLED: "false"
     volumes:
       - openwa-data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   openwa-data:
