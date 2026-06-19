@@ -105,9 +105,43 @@ export async function askAssistant(message: string) {
 }
 
 export async function askKnowledge(query: string) {
-  return apiPost<{ answer: string; sources: unknown[] }>("/knowledge/ask", { query });
+  return apiPost<{ answer: string; sources: unknown[]; graph_context: unknown[] }>("/knowledge/ask", { query });
 }
 
 export async function bootstrapNotion() {
   return apiPost("/integrations/notion/bootstrap", {});
+}
+
+export type KnowledgeItem = {
+  id: string;
+  title: string;
+  raw_text: string;
+  source_type: string;
+  source_id?: string | null;
+  created_at?: string | null;
+};
+
+export async function getKnowledgeItems() {
+  return apiGet<KnowledgeItem[]>("/knowledge/items");
+}
+
+export async function createKnowledgeItem(input: {
+  title: string;
+  raw_text: string;
+  source_type?: string;
+  source_id?: string;
+}) {
+  return apiPost<KnowledgeItem>("/knowledge/items", input);
+}
+
+export async function deleteKnowledgeItem(id: string) {
+  const res = await fetch(`${API_URL}/knowledge/items/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to delete knowledge item");
+  }
+
+  return res.json();
 }
