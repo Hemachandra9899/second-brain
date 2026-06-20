@@ -4,7 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import Base, engine
 from app.db.migrate import run_migrations
-from app.routers import auth, health, tasks, chat, notion, whatsapp, knowledge, mood, demo, capture, brief, memory, projects
+from app.modules.auth.auth_router import router as auth_router
+from app.modules.chat.chat_router import router as chat_router
+from app.modules.tasks.task_router import router as task_router
+from app.modules.knowledge.knowledge_router import router as knowledge_router
+from app.modules.mood.mood_router import router as mood_router
+from app.modules.capture.capture_router import router as capture_router
+from app.modules.brief.brief_router import router as brief_router
+from app.modules.memory.memory_router import router as memory_router
+from app.modules.projects.project_router import router as project_router
+from app.modules.demo.demo_router import router as demo_router
+from app.modules.integrations.whatsapp.whatsapp_router import router as whatsapp_router
+from app.modules.integrations.notion.notion_router import router as notion_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -60,16 +71,20 @@ def root():
     }
 
 
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(health.router, prefix="/health", tags=["health"])
-app.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
-app.include_router(chat.router, prefix="/chat", tags=["chat"])
-app.include_router(notion.router, prefix="/integrations/notion", tags=["notion"])
-app.include_router(whatsapp.router, prefix="/integrations/whatsapp", tags=["whatsapp"])
-app.include_router(knowledge.router, prefix="/knowledge", tags=["knowledge"])
-app.include_router(mood.router, prefix="/mood", tags=["mood"])
-app.include_router(demo.router, prefix="/demo", tags=["demo"])
-app.include_router(capture.router, prefix="/capture", tags=["capture"])
-app.include_router(brief.router, prefix="/brief", tags=["brief"])
-app.include_router(memory.router, prefix="/memory", tags=["memory"])
-app.include_router(projects.router, prefix="/projects", tags=["projects"])
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(chat_router, prefix="/chat", tags=["chat"])
+app.include_router(task_router, prefix="/tasks", tags=["tasks"])
+app.include_router(knowledge_router, prefix="/knowledge", tags=["knowledge"])
+app.include_router(mood_router, prefix="/mood", tags=["mood"])
+app.include_router(capture_router, prefix="/capture", tags=["capture"])
+app.include_router(brief_router, prefix="/brief", tags=["brief"])
+app.include_router(memory_router, prefix="/memory", tags=["memory"])
+app.include_router(project_router, prefix="/projects", tags=["projects"])
+app.include_router(demo_router, prefix="/demo", tags=["demo"])
+app.include_router(notion_router, prefix="/integrations/notion", tags=["notion"])
+app.include_router(whatsapp_router, prefix="/integrations/whatsapp", tags=["whatsapp"])
