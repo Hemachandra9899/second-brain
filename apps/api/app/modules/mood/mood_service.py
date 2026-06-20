@@ -141,6 +141,7 @@ Message:
     result = ask_llm(
         prompt,
         system="You are a careful emotion classifier. Return valid JSON only.",
+        fallback='{"mood":"neutral","intensity":"medium","confidence":0.3,"valence":"neutral","arousal":"medium","recommended_tone":"calm_supportive"}',
     )
 
     mood_data = _safe_json_loads(result)
