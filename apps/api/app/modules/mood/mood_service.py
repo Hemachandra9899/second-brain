@@ -3,7 +3,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.models import MoodEvent
-from app.services.llm_nvidia import ask_llm
+from app.services.llm_nvidia import ask_json_fast
 
 
 CALMING_THEMES = {
@@ -138,13 +138,18 @@ Message:
 {text}
 """.strip()
 
-    result = ask_llm(
-        prompt,
+    mood_data = ask_json_fast(
+        prompt=prompt,
         system="You are a careful emotion classifier. Return valid JSON only.",
-        fallback='{"mood":"neutral","intensity":"medium","confidence":0.3,"valence":"neutral","arousal":"medium","recommended_tone":"calm_supportive"}',
+        fallback={
+            "mood": "neutral",
+            "intensity": "medium",
+            "confidence": 0.3,
+            "valence": "neutral",
+            "arousal": "medium",
+            "recommended_tone": "calm_supportive",
+        },
     )
-
-    mood_data = _safe_json_loads(result)
 
     mood = str(mood_data.get("mood", "neutral")).lower()
     theme = get_theme_for_mood(mood)

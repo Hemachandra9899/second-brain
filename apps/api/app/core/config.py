@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     nvidia_api_key: str
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     nvidia_llm_model: str = "meta/llama-3.1-70b-instruct"
+    nvidia_fast_model: str = "deepseek-ai/deepseek-v4-flash"
+    nvidia_deep_model: str = "deepseek-ai/deepseek-v4-flash"
 
     pinecone_api_key: str
     pinecone_index: str = "second-brain"

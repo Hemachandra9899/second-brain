@@ -26,15 +26,29 @@ def _safe_json_loads(text: str) -> dict:
 def consolidate_memories(db: Session, current_user: User | None = None) -> list[dict]:
     user_id = current_user.id if current_user else None
 
-    task_query = db.query(Task).order_by(Task.created_at.desc()).limit(20)
-    knowledge_query = db.query(KnowledgeItem).order_by(KnowledgeItem.created_at.desc()).limit(20)
+    task_query = db.query(Task)
+    knowledge_query = db.query(KnowledgeItem)
 
     if user_id:
         task_query = task_query.filter(Task.user_id == user_id)
         knowledge_query = knowledge_query.filter(KnowledgeItem.user_id == user_id)
+    else:
+        task_query = task_query.filter(Task.user_id.is_(None))
+        knowledge_query = knowledge_query.filter(KnowledgeItem.user_id.is_(None))
 
-    recent_tasks = task_query.all()
-    recent_knowledge = knowledge_query.all()
+    recent_tasks = (
+        task_query
+        .order_by(Task.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    recent_knowledge = (
+        knowledge_query
+        .order_by(KnowledgeItem.created_at.desc())
+        .limit(20)
+        .all()
+    )
 
     raw_items = []
 
