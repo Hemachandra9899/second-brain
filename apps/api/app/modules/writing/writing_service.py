@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.models import Task, User, WritingDocument
+from app.modules.activity.activity_service import create_activity_event
 from app.modules.knowledge.knowledge_service import index_knowledge_item
 from app.services.llm_nvidia import ask_json_fast
 
@@ -145,6 +146,23 @@ def create_writing_document(
     except Exception:
         pass
 
+    try:
+        create_activity_event(
+            db,
+            event_type="writing_saved",
+            title=doc.title,
+            description="Saved a writing block",
+            source_type="writing",
+            source_id=doc.id,
+            metadata={
+                "source_type": doc.source_type,
+            },
+            current_user=current_user,
+            user_id=doc.user_id,
+        )
+    except Exception:
+        pass
+
     return doc
 
 
@@ -181,6 +199,23 @@ def extract_tasks_from_writing(
 
     for task in created:
         db.refresh(task)
+
+    try:
+        create_activity_event(
+            db,
+            event_type="tasks_extracted",
+            title=f"{len(created)} task(s) extracted",
+            description=f"Extracted tasks from writing: {doc.title}",
+            source_type="writing",
+            source_id=doc.id,
+            metadata={
+                "tasks_created": len(created),
+                "task_ids": [task.id for task in created],
+            },
+            user_id=doc.user_id,
+        )
+    except Exception:
+        pass
 
     return created
 

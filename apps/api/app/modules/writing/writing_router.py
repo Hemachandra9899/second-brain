@@ -7,6 +7,7 @@ from app.core.auth import get_current_user, require_current_user
 from app.core.config import settings
 from app.db.session import get_db
 from app.models import User, WritingDocument
+from app.modules.activity.activity_service import create_activity_event
 from app.modules.integrations.notion.notion_oauth_service import (
     get_notion_connection,
     get_decrypted_token,
@@ -210,6 +211,24 @@ def sync_writing_to_notion(
     doc.notion_page_id = page.get("id")
     db.commit()
     db.refresh(doc)
+
+    try:
+        create_activity_event(
+            db,
+            event_type="notion_page_created",
+            title=doc.title,
+            description="Created a Notion page from a writing block",
+            source_type="notion",
+            source_id=page.get("id"),
+            url=page.get("url"),
+            metadata={
+                "writing_document_id": doc.id,
+                "notion_page_id": page.get("id"),
+            },
+            current_user=current_user,
+        )
+    except Exception:
+        pass
 
     return {
         "ok": True,

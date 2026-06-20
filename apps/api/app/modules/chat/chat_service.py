@@ -17,6 +17,7 @@ from app.modules.integrations.notion.notion_service import (
     retrieve_page_blocks,
     blocks_to_text,
 )
+from app.modules.activity.activity_service import create_activity_event
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge
 from app.modules.knowledge.rag_service import ask_knowledge_base
 
@@ -273,6 +274,24 @@ def _handle_create_notion_task(
 
     try:
         index_task_as_knowledge(db=db, task=task)
+    except Exception:
+        pass
+
+    try:
+        create_activity_event(
+            db,
+            event_type="notion_page_created",
+            title=page_title,
+            description="Created a Notion page from chat",
+            source_type="notion",
+            source_id=page.get("id"),
+            url=page.get("url"),
+            metadata={
+                "task_id": task.id,
+                "notion_page_id": page.get("id"),
+            },
+            current_user=current_user,
+        )
     except Exception:
         pass
 

@@ -454,6 +454,22 @@ export async function extractWritingTasks(documentId: string) {
   }>(`/writing/documents/${documentId}/extract`, {});
 }
 
+export type ActivityEvent = {
+  id: string;
+  event_type: string;
+  title: string;
+  description?: string | null;
+  source_type?: string | null;
+  source_id?: string | null;
+  url?: string | null;
+  metadata?: Record<string, unknown>;
+  created_at?: string | null;
+};
+
+export async function getRecentActivity() {
+  return apiGet<ActivityEvent[]>("/activity/recent");
+}
+
 export async function syncWritingToNotion(documentId: string) {
   return apiPost<{
     ok: boolean;

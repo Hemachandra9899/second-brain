@@ -241,4 +241,32 @@ def run_migrations():
             ))
             print("Created index: idx_writing_documents_user_id")
 
+    if "activity_events" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS activity_events (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    event_type VARCHAR(100) NOT NULL,
+                    title VARCHAR(500) NOT NULL,
+                    description TEXT,
+                    source_type VARCHAR(100),
+                    source_id VARCHAR(255),
+                    url TEXT,
+                    metadata_json TEXT,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: activity_events")
+
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_activity_events_user_id ON activity_events(user_id)"
+            ))
+            print("Created index: idx_activity_events_user_id")
+
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_activity_events_event_type ON activity_events(event_type)"
+            ))
+            print("Created index: idx_activity_events_event_type")
+
     print("Migration complete")
