@@ -19,6 +19,8 @@ import {
 } from "@/components/assistant/ActionCards";
 import { TaskChoiceCards } from "@/components/assistant/TaskChoiceCards";
 import type {
+  AssistantResponse,
+  BrainAskResponse,
   CreatedTaskCardData,
   NotionPageCardData,
   TaskChoice,
@@ -117,6 +119,18 @@ export function AssistantScreen() {
     ]);
   }
 
+  function getNotionPage(res: AssistantResponse | BrainAskResponse) {
+    return "notion_page" in res ? res.notion_page || null : null;
+  }
+
+  function getCreatedTask(res: AssistantResponse | BrainAskResponse) {
+    return "created_task" in res ? res.created_task || null : null;
+  }
+
+  function getTaskChoices(res: AssistantResponse | BrainAskResponse) {
+    return "task_choices" in res ? res.task_choices || [] : [];
+  }
+
   async function sendMessage(text?: string) {
     const content = (text || input).trim();
     if (!content || loading) return;
@@ -135,9 +149,9 @@ export function AssistantScreen() {
         {
           role: "assistant",
           content: res.answer || "I could not generate a response.",
-          notion_page: "notion_page" in res ? res.notion_page || null : null,
-          created_task: "created_task" in res ? res.created_task || null : null,
-          task_choices: res.task_choices || [],
+          notion_page: getNotionPage(res),
+          created_task: getCreatedTask(res),
+          task_choices: getTaskChoices(res),
           sources: res.sources || [],
         },
       ]);
