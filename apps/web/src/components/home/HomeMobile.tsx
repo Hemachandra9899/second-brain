@@ -47,8 +47,8 @@ function RecentActivityCard({ event }: { event: ActivityEvent }) {
   const external = href.startsWith("http");
 
   const content = (
-    <article className="flex min-h-[7.5rem] items-center gap-4 rounded-[1.9rem] bg-white p-4 shadow-sm ring-1 ring-slate-200 active:scale-[0.99]">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.4rem] bg-slate-100 text-2xl font-bold text-slate-900">
+    <article className="flex min-h-[7.5rem] items-center gap-4 rounded-[1.9rem] bg-white p-4 shadow-sm ring-1 ring-slate-200 active:scale-[0.99] dark:bg-zinc-900 dark:ring-white/10">
+      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.4rem] bg-slate-100 text-2xl font-bold text-slate-900 dark:bg-zinc-800 dark:text-white">
         {event.source_type === "notion" ? "N" : "✦"}
       </div>
 
@@ -68,7 +68,7 @@ function RecentActivityCard({ event }: { event: ActivityEvent }) {
         </div>
       </div>
 
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-50 text-xl text-blue-600">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-50 text-xl text-blue-600 dark:bg-sky-900/50">
         ›
       </div>
     </article>
@@ -113,7 +113,7 @@ export function HomeMobile() {
           );
 
   return (
-    <main className="min-h-[100dvh] bg-[#f7f7f7] text-slate-950">
+    <main className="min-h-[100dvh] bg-[#f7f7f7] text-slate-950 transition-colors dark:bg-[#050505] dark:text-white">
       <div className="mx-auto min-h-[100dvh] max-w-md px-5 pb-32 pt-12">
         <header className="flex items-start justify-between">
           <div>
@@ -153,7 +153,9 @@ export function HomeMobile() {
 
           <Link
             href="/"
-            className="mt-8 flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl shadow-sm ring-1 ring-slate-100"
+            className="mt-8 flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl shadow-sm ring-1 ring-slate-100 dark:bg-zinc-900 dark:ring-white/10"
+
+
           >
             ✦
           </Link>
@@ -165,13 +167,13 @@ export function HomeMobile() {
 
         <section className="mt-8 space-y-4">
           {loading ? (
-            <div className="rounded-[2rem] bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-[2rem] bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-white/10">
               Loading your brain…
             </div>
           ) : null}
 
           {!loading && visibleEvents.length === 0 ? (
-            <div className="rounded-[2rem] bg-white p-7 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-[2rem] bg-white p-7 shadow-sm ring-1 ring-slate-200 dark:bg-zinc-900 dark:ring-white/10">
               <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
                 Empty brain
               </p>
@@ -180,14 +182,14 @@ export function HomeMobile() {
                 Start by writing something.
               </h2>
 
-              <p className="mt-5 text-base leading-7 text-slate-500">
+              <p className="mt-5 text-base leading-7 text-slate-500 dark:text-zinc-400">
                 Capture messy thoughts, clean them, extract tasks, and sync them
                 to Notion.
               </p>
 
               <Link
                 href="/writing"
-                className="mt-7 inline-flex rounded-full bg-slate-950 px-6 py-4 text-sm font-semibold text-white"
+                className="mt-7 inline-flex rounded-full bg-slate-950 px-6 py-4 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
               >
                 New writing →
               </Link>
@@ -199,7 +201,7 @@ export function HomeMobile() {
           ))}
         </section>
 
-        <section className="mt-8 rounded-[2.2rem] bg-slate-950 p-6 text-white">
+        <section className="mt-8 rounded-[2.2rem] bg-slate-950 p-6 text-white dark:bg-zinc-900 dark:ring-1 dark:ring-white/10">
           <p className="text-xs font-semibold uppercase tracking-wide text-sky-200">
             Quick capture
           </p>

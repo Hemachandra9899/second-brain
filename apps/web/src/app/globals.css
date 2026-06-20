@@ -6,6 +6,10 @@
   color-scheme: light;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 html,
 body {
   min-height: 100%;
@@ -14,8 +18,13 @@ body {
 
 body {
   margin: 0;
-  background: #f0f9ff;
-  color: #0f172a;
+  background: #f7f7f7;
+  color: #020617;
+}
+
+html.dark body {
+  background: #050505;
+  color: #fafafa;
 }
 
 * {

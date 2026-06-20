@@ -32,13 +32,13 @@ export function SavedInsightCards({ events }: { events: ActivityEvent[] }) {
   return (
     <section className="mt-8">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-3xl font-semibold tracking-[-0.06em] text-slate-950">
+        <h2 className="text-3xl font-semibold tracking-[-0.06em] text-slate-950 dark:text-white">
           Saved Insights
         </h2>
 
         <Link
           href="/insights"
-          className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm ring-1 ring-slate-200"
+          className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm ring-1 ring-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-white/10"
         >
           View all
         </Link>
@@ -52,14 +52,14 @@ export function SavedInsightCards({ events }: { events: ActivityEvent[] }) {
           const card = (
             <article
               key={event.id}
-              className="h-[24rem] w-[20rem] shrink-0 snap-center rounded-[2.2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200"
+              className="h-[24rem] w-[20rem] shrink-0 snap-center rounded-[2.2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 dark:bg-zinc-900 dark:ring-white/10"
             >
               <div className="flex items-start justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-lg font-bold text-sky-700">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-lg font-bold text-sky-700 dark:bg-sky-900/50">
                   {event.source_type === "notion" ? "N" : "✦"}
                 </div>
 
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-zinc-800 dark:text-zinc-400">
                   {event.source_type || "brain"}
                 </span>
               </div>
@@ -68,12 +68,12 @@ export function SavedInsightCards({ events }: { events: ActivityEvent[] }) {
                 {event.event_type?.replaceAll("_", " ") || "Saved"}
               </p>
 
-              <h3 className="mt-3 text-3xl font-semibold leading-[1.02] tracking-[-0.07em] text-slate-950">
+              <h3 className="mt-3 text-3xl font-semibold leading-[1.02] tracking-[-0.07em] text-slate-950 dark:text-white">
                 {event.title}
               </h3>
 
               {event.description ? (
-                <p className="mt-4 line-clamp-4 text-base leading-7 text-slate-600">
+                <p className="mt-4 line-clamp-4 text-base leading-7 text-slate-600 dark:text-zinc-400">
                   {event.description}
                 </p>
               ) : null}

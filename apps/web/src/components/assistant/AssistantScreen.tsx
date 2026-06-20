@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { askAssistant, askBrain } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
 import {
   CommandTray,
@@ -186,30 +187,30 @@ export function AssistantScreen() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-sky-50 text-slate-950">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-sky-100 via-blue-50 to-white shadow-2xl">
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl">
+    <main className="min-h-[100dvh] bg-sky-50 text-slate-950 transition-colors dark:bg-[#050505] dark:text-white">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-sky-100 via-blue-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push("/home")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-slate-900 shadow-sm transition active:scale-95"
-              aria-label="Go home"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-slate-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
+              aria-label="Go to insights"
             >
               ‹
             </button>
 
             <div className="text-center">
-              <p className="text-lg font-semibold tracking-tight text-slate-950">
+              <p className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
                 Second Brain
               </p>
-              <p className="text-[11px] font-medium text-sky-600">
+              <p className="text-[11px] font-medium text-sky-600 dark:text-sky-400">
                 AI Assistant
               </p>
             </div>
 
             <button
               onClick={() => setProfileOpen(true)}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/85 text-sm font-semibold text-slate-900 shadow-sm transition active:scale-95"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/85 text-sm font-semibold text-slate-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
               aria-label="Open profile"
             >
               {user?.picture ? (
@@ -324,7 +325,7 @@ export function AssistantScreen() {
           </div>
         </section>
 
-        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
+        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 dark:from-zinc-950 dark:via-zinc-950/95 dark:to-zinc-950/40">
           {trayOpen ? (
             <CommandTray input={input} onSelect={insertCommand} />
           ) : null}
@@ -433,21 +434,26 @@ function ProfileSheet({
   signedIn: boolean;
   user: { name?: string; email?: string; picture?: string } | null;
 }) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-slate-950/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom-4 duration-200">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl dark:bg-zinc-900">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-semibold">Profile</p>
+          <p className="text-lg font-semibold text-slate-950 dark:text-white">
+            Profile
+          </p>
+
           <button
             onClick={onClose}
-            className="rounded-full bg-slate-100 px-3 py-1 text-sm"
+            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             Close
           </button>
         </div>
 
         {signedIn ? (
-          <div className="rounded-[1.5rem] bg-sky-50 p-4">
+          <div className="rounded-[1.5rem] bg-sky-50 p-4 dark:bg-zinc-800">
             <div className="flex items-center gap-3">
               {user?.picture ? (
                 <img
@@ -456,39 +462,48 @@ function ProfileSheet({
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white dark:bg-white dark:text-slate-950">
                   U
                 </div>
               )}
 
               <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-950">
+                <p className="truncate font-semibold text-slate-950 dark:text-white">
                   {user?.name || "Signed in"}
                 </p>
-                <p className="truncate text-xs text-slate-500">{user?.email}</p>
+                <p className="truncate text-xs text-slate-500 dark:text-zinc-400">
+                  {user?.email}
+                </p>
               </div>
             </div>
           </div>
         ) : (
           <Link
             href="/login"
-            className="block rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-semibold text-white"
+            className="block rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
           >
             Continue with Google
           </Link>
         )}
 
         <div className="mt-4 grid gap-2">
+          <button
+            onClick={toggleTheme}
+            className="rounded-2xl bg-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
+          >
+            {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          </button>
+
           <Link
             href="/settings/integrations"
-            className="rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-slate-700"
+            className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             Connect Notion
           </Link>
 
           <Link
             href="/imports/instagram"
-            className="rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-slate-700"
+            className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             Upload Instagram export
           </Link>
@@ -496,7 +511,7 @@ function ProfileSheet({
           {signedIn ? (
             <button
               onClick={logout}
-              className="rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-medium text-red-600"
+              className="rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-medium text-red-600 dark:bg-red-950/30"
             >
               Logout
             </button>
