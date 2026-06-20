@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user, require_current_user
@@ -16,10 +17,20 @@ from app.modules.integrations.notion.notion_oauth_service import (
     get_decrypted_token,
     upsert_notion_connection,
 )
-from app.modules.integrations.notion.notion_service import pull_notion_tasks
+from app.modules.integrations.notion.notion_service import (
+    pull_notion_tasks,
+    search_notion_databases,
+    retrieve_notion_database,
+    resolve_data_source_id,
+)
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge
 
 router = APIRouter()
+
+
+class DefaultNotionDatabaseRequest(BaseModel):
+    database_id: str
+    title: str | None = None
 
 
 @router.get("/connect")
@@ -28,6 +39,49 @@ def connect_notion(
 ):
     auth_url = build_notion_auth_url(state=current_user.id)
     return {"auth_url": auth_url}
+
+
+@router.get("/databases")
+def list_notion_databases(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        raise HTTPException(status_code=400, detail="Notion not connected")
+
+    access_token = get_decrypted_token(conn)
+    databases = search_notion_databases(access_token)
+
+    return {"databases": databases}
+
+
+@router.post("/default-database")
+def set_default_notion_database(
+    payload: DefaultNotionDatabaseRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        raise HTTPException(status_code=400, detail="Notion not connected")
+
+    access_token = get_decrypted_token(conn)
+    data_source_id = resolve_data_source_id(access_token, payload.database_id)
+
+    conn.default_database_id = payload.database_id
+    conn.default_data_source_id = data_source_id
+    conn.default_database_title = payload.title
+
+    db.commit()
+    db.refresh(conn)
+
+    return {
+        "ok": True,
+        "database_id": conn.default_database_id,
+        "data_source_id": conn.default_data_source_id,
+        "title": conn.default_database_title,
+    }
 
 
 @router.get("/callback")
@@ -87,6 +141,9 @@ def notion_status(
         "workspace_icon": conn.workspace_icon,
         "owner_name": conn.owner_name,
         "owner_email": conn.owner_email,
+        "default_database_id": conn.default_database_id,
+        "default_data_source_id": conn.default_data_source_id,
+        "default_database_title": conn.default_database_title,
     }
 
 

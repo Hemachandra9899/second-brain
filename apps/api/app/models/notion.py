@@ -25,5 +25,9 @@ class NotionConnection(Base):
     owner_email: Mapped[str | None] = mapped_column(String(500), nullable=True)
     owner_avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    default_database_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    default_data_source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    default_database_title: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

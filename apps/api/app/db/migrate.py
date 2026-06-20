@@ -177,6 +177,19 @@ def run_migrations():
             """))
             print("Created table: whatsapp_messages")
 
+    with engine.begin() as conn:
+        if "notion_connections" in existing_tables:
+            existing_columns_nc = [col["name"] for col in inspector.get_columns("notion_connections")]
+            if "default_database_id" not in existing_columns_nc:
+                conn.execute(text("ALTER TABLE notion_connections ADD COLUMN default_database_id VARCHAR(255)"))
+                print("Added column: notion_connections.default_database_id")
+            if "default_data_source_id" not in existing_columns_nc:
+                conn.execute(text("ALTER TABLE notion_connections ADD COLUMN default_data_source_id VARCHAR(255)"))
+                print("Added column: notion_connections.default_data_source_id")
+            if "default_database_title" not in existing_columns_nc:
+                conn.execute(text("ALTER TABLE notion_connections ADD COLUMN default_database_title VARCHAR(500)"))
+                print("Added column: notion_connections.default_database_title")
+
     if "notion_connections" not in existing_tables:
         with engine.begin() as conn:
             conn.execute(text("""

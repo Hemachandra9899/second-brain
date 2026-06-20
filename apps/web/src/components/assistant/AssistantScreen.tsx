@@ -8,10 +8,16 @@ import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
 import { CommandTray } from "@/components/assistant/CommandTray";
 import { TypingBubble } from "@/components/assistant/TypingBubble";
+import { NotionPageCard } from "@/components/assistant/NotionPageCard";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
+  notion_page?: {
+    id: string;
+    title: string;
+    url: string;
+  } | null;
 };
 
 const starterChips = [
@@ -50,6 +56,7 @@ export function AssistantScreen() {
   const [loading, setLoading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [commandTrayOpen, setCommandTrayOpen] = useState(false);
 
   const user = getStoredUser();
   const signedIn = isSignedIn();
@@ -75,6 +82,7 @@ export function AssistantScreen() {
         {
           role: "assistant",
           content: res.answer || "I could not generate a response.",
+          notion_page: res.notion_page || null,
         },
       ]);
     } catch {
@@ -93,23 +101,37 @@ export function AssistantScreen() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    setCommandTrayOpen(false);
     sendMessage();
   }
 
   function insertCommand(value: string) {
     setInput((prev) => {
-      if (!prev.trim()) return value;
+      const parts = prev.split(/(\s+)/);
+      let lastWordIndex = -1;
 
-      if (prev.includes("@")) {
-        return prev.replace(/@\w*$/, value).trimEnd() + " ";
+      for (let i = parts.length - 1; i >= 0; i--) {
+        if (parts[i].trim()) {
+          lastWordIndex = i;
+          break;
+        }
       }
 
-      if (prev.trim().startsWith("/")) {
+      if (lastWordIndex === -1) {
         return value;
+      }
+
+      const last = parts[lastWordIndex];
+
+      if (last.startsWith("/") || last.startsWith("@")) {
+        parts[lastWordIndex] = value;
+        return parts.join("").replace(/\s+$/, "") + " ";
       }
 
       return `${prev.trimEnd()} ${value}`;
     });
+
+    setCommandTrayOpen(false);
   }
 
   return (
@@ -214,11 +236,18 @@ export function AssistantScreen() {
 
           <div className="space-y-3">
             {messages.map((message, index) => (
-              <ChatBubble
-                key={index}
-                role={message.role}
-                content={message.content}
-              />
+              <div key={index}>
+                <ChatBubble
+                  role={message.role}
+                  content={message.content}
+                />
+
+                {message.role === "assistant" && message.notion_page ? (
+                  <div className="mr-auto max-w-[88%]">
+                    <NotionPageCard page={message.notion_page} />
+                  </div>
+                ) : null}
+              </div>
             ))}
 
             {loading ? (
@@ -230,7 +259,9 @@ export function AssistantScreen() {
         </section>
 
         <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
-          <CommandTray input={input} onSelect={insertCommand} />
+          {commandTrayOpen ? (
+            <CommandTray input={input} onSelect={insertCommand} />
+          ) : null}
 
           <div className="flex items-center gap-3">
             <button
@@ -247,7 +278,13 @@ export function AssistantScreen() {
             >
               <input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setInput(value);
+
+                  const lastToken = value.split(/\s/).pop() || "";
+                  setCommandTrayOpen(lastToken.startsWith("/") || lastToken.startsWith("@"));
+                }}
                 placeholder="Ask, /command, or @mention..."
                 className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
               />

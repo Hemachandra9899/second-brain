@@ -11,7 +11,12 @@ from app.modules.integrations.notion.notion_oauth_service import (
     get_notion_connection,
     get_decrypted_token,
 )
-from app.modules.integrations.notion.notion_service import create_notion_task
+from app.modules.integrations.notion.notion_service import (
+    create_notion_task,
+    search_relevant_notion_pages,
+    retrieve_page_blocks,
+    blocks_to_text,
+)
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge
 from app.modules.knowledge.rag_service import ask_knowledge_base
 
@@ -33,6 +38,11 @@ def run_chat(
 
     if intent["intent"] == "create_notion_task":
         return _handle_create_notion_task(db, message, intent, current_user)
+
+    if intent["intent"] == "query_notion_tasks" or (
+        "@notion" in message.lower() and intent["intent"] != "create_notion_task"
+    ):
+        return _handle_notion_question(db, message, intent, current_user)
 
     if intent["intent"] == "create_task":
         return _handle_create_task(db, message, intent, current_user)
@@ -186,13 +196,16 @@ def _handle_create_notion_task(
             "task_id": task.id,
         }
 
-    if not settings.notion_tasks_database_id:
+    if not conn.default_database_id and not conn.default_data_source_id and not settings.notion_tasks_database_id:
         try:
             index_task_as_knowledge(db=db, task=task)
         except Exception:
             pass
         return {
-            "answer": "I created the task locally, but NOTION_TASKS_DATABASE_ID is not configured yet.",
+            "answer": (
+                "I created the task locally, but no Notion database is selected.\n\n"
+                "Go to your profile → Integrations → Notion, and select a default database."
+            ),
             "intent": intent,
             "task_id": task.id,
         }
@@ -207,14 +220,45 @@ def _handle_create_notion_task(
             status="Todo",
             due_date=due_date,
             priority=priority,
-            database_id=settings.notion_tasks_database_id,
+            database_id=conn.default_database_id or settings.notion_tasks_database_id,
+            data_source_id=conn.default_data_source_id,
         )
 
-        task.notion_page_id = page.get("id")
+        page_id = page.get("id")
+        page_url = page.get("url")
+        page_title = title
+
+        if not page_id or not page_url:
+            return {
+                "answer": (
+                    "I created the task locally, but Notion did not return a usable page URL. "
+                    "Please check your Notion connection and selected database."
+                ),
+                "intent": intent,
+                "task_id": task.id,
+                "notion_page_id": page_id,
+            }
+
+        task.notion_page_id = page_id
         db.commit()
         db.refresh(task)
-    except Exception:
-        pass
+
+    except Exception as exc:
+        try:
+            index_task_as_knowledge(db=db, task=task)
+        except Exception:
+            pass
+
+        return {
+            "answer": (
+                "I created the task locally, but could not create the Notion page.\n\n"
+                f"Reason: `{str(exc)}`"
+            ),
+            "intent": intent,
+            "task_id": task.id,
+            "notion_error": str(exc),
+            "notion_page": None,
+        }
 
     try:
         index_task_as_knowledge(db=db, task=task)
@@ -222,10 +266,15 @@ def _handle_create_notion_task(
         pass
 
     return {
-        "answer": f"Done — I created '{title}' in your Second Brain and Notion.",
+        "answer": "Done — I created this in Notion and linked it to your Second Brain.",
         "intent": intent,
         "task_id": task.id,
-        "notion_page_id": task.notion_page_id,
+        "notion_page_id": page_id,
+        "notion_page": {
+            "id": page_id,
+            "title": page_title,
+            "url": page_url,
+        },
     }
 
 
@@ -260,6 +309,73 @@ def _handle_task_query(
         "answer": "Here are your recent tasks:\n" + "\n".join(lines),
         "intent": intent,
     }
+
+
+def _handle_notion_question(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {
+            "answer": "Please sign in first so I can read your Notion workspace.",
+            "intent": intent,
+        }
+
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        return {
+            "answer": "Connect Notion first, then I can answer using your workspace.",
+            "intent": intent,
+        }
+
+    access_token = get_decrypted_token(conn)
+
+    try:
+        pages = search_relevant_notion_pages(
+            access_token=access_token,
+            query=message.replace("/notion", "").replace("@notion", "").strip(),
+            data_source_id=conn.default_data_source_id,
+            database_id=conn.default_database_id or settings.notion_tasks_database_id,
+        )
+
+        context_parts = []
+        for page in pages[:5]:
+            blocks = retrieve_page_blocks(access_token, page["id"])
+            text = blocks_to_text(blocks)
+            if text:
+                context_parts.append(f"Page: {page.get('url')}\n{text[:1200]}")
+
+        if not context_parts:
+            return {
+                "answer": "I found Notion access, but no relevant page content matched that question.",
+                "intent": intent,
+            }
+
+        context = "\n\n---\n\n".join(context_parts)
+
+        answer = ask_fast(
+            prompt=f"Question: {message}\n\nRelevant Notion context:\n{context}",
+            system=(
+                "Answer using only the provided Notion context. "
+                "If the answer is not present, say what is missing. Keep it concise."
+            ),
+            max_tokens=800,
+        )
+
+        return {
+            "answer": answer,
+            "intent": intent,
+            "notion_pages_used": len(context_parts),
+        }
+
+    except Exception as exc:
+        return {
+            "answer": f"I could not fetch Notion context yet. Reason: `{str(exc)}`",
+            "intent": intent,
+            "notion_error": str(exc),
+        }
 
 
 def _handle_capture_note(

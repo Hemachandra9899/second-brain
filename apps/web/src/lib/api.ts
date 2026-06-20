@@ -134,12 +134,27 @@ export async function syncTaskToNotion(id: string) {
   return apiPost<Task>(`/tasks/${id}/sync/notion`, {});
 }
 
+export type NotionPageCard = {
+  id: string;
+  title: string;
+  url: string;
+};
+
+export type AssistantResponse = {
+  answer: string;
+  mood?: unknown;
+  intent?: unknown;
+  task_id?: string;
+  notion_page_id?: string;
+  notion_page?: NotionPageCard | null;
+};
+
 export async function askAssistant(message: string) {
-  return apiPost<{ answer: string; mood?: unknown }>("/chat", { message });
+  return apiPost<AssistantResponse>("/chat", { message });
 }
 
 export async function chat(message: string) {
-  return apiPost<{ answer: string; mood?: unknown }>("/chat", { message });
+  return apiPost<AssistantResponse>("/chat", { message });
 }
 
 export async function askKnowledge(query: string) {
@@ -331,6 +346,9 @@ export type NotionStatus = {
   workspace_icon?: string | null;
   owner_name?: string | null;
   owner_email?: string | null;
+  default_database_id?: string | null;
+  default_data_source_id?: string | null;
+  default_database_title?: string | null;
 };
 
 export async function getNotionStatus() {
@@ -343,4 +361,21 @@ export async function getNotionConnectUrl() {
 
 export async function disconnectNotion() {
   return apiDelete<{ ok: boolean }>("/integrations/notion/disconnect");
+}
+
+export type NotionDatabase = {
+  id: string;
+  title: string;
+  url?: string;
+};
+
+export async function getNotionDatabases() {
+  return apiGet<{ databases: NotionDatabase[] }>("/integrations/notion/databases");
+}
+
+export async function setDefaultNotionDatabase(database_id: string, title?: string) {
+  return apiPost("/integrations/notion/default-database", {
+    database_id,
+    title,
+  });
 }
