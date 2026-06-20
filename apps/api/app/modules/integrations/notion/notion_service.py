@@ -1,3 +1,5 @@
+import re
+
 import requests
 
 from app.core.config import settings
@@ -105,6 +107,99 @@ def search_notion_databases(access_token: str) -> list[dict]:
     return normalized
 
 
+def retrieve_data_source(access_token: str, data_source_id: str) -> dict:
+    headers = _build_notion_headers(access_token)
+
+    response = requests.get(
+        f"https://api.notion.com/v1/data_sources/{data_source_id}",
+        headers=headers,
+        timeout=30,
+    )
+
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Notion retrieve data source failed: {response.status_code} {response.text}"
+        )
+
+    return response.json()
+
+
+def find_title_property(schema: dict) -> str:
+    properties = schema.get("properties", {})
+
+    for name, prop in properties.items():
+        if prop.get("type") == "title":
+            return name
+
+    return "Name"
+
+
+def build_safe_properties(
+    schema: dict,
+    title: str,
+    status: str | None = None,
+    priority: str | None = None,
+    due_date: str | None = None,
+) -> dict:
+    properties_schema = schema.get("properties", {})
+    title_prop = find_title_property(schema)
+
+    properties = {
+        title_prop: {
+            "title": [
+                {
+                    "text": {
+                        "content": title[:180],
+                    }
+                }
+            ]
+        }
+    }
+
+    if "Status" in properties_schema and status:
+        prop_type = properties_schema["Status"].get("type")
+        if prop_type == "status":
+            properties["Status"] = {"status": {"name": status}}
+        elif prop_type == "select":
+            properties["Status"] = {"select": {"name": status}}
+
+    if "Priority" in properties_schema and priority:
+        prop_type = properties_schema["Priority"].get("type")
+        if prop_type == "select":
+            properties["Priority"] = {"select": {"name": priority}}
+        elif prop_type == "status":
+            properties["Priority"] = {"status": {"name": priority}}
+
+    if "Due Date" in properties_schema and due_date:
+        properties["Due Date"] = {
+            "date": {
+                "start": due_date,
+            }
+        }
+
+    return properties
+
+
+def extract_todo_items(message: str) -> list[str]:
+    matches = re.findall(r"(?:^|\s)\d+\.\s*([^0-9]+?)(?=\s+\d+\.|$)", message)
+
+    items = [m.strip(" ?.-") for m in matches if m.strip(" ?.-")]
+
+    if items:
+        return items
+
+    cleaned = (
+        message.replace("/notion", "")
+        .replace("@notion", "")
+        .replace("create todo", "")
+        .replace("create a todo", "")
+        .replace("add", "")
+        .strip(" ?.-")
+    )
+
+    return [cleaned] if cleaned else ["New todo"]
+
+
 def retrieve_notion_database(access_token: str, database_id: str) -> dict:
     headers = _build_notion_headers(access_token)
 
@@ -196,41 +291,64 @@ def create_notion_task(
     if not resolved_data_source_id:
         raise RuntimeError("No Notion data source/database selected for task creation.")
 
-    properties = {
-        "Name": _title_prop(title),
-    }
+    schema = retrieve_data_source(access_token, resolved_data_source_id)
 
-    if status:
-        properties["Status"] = _select_prop(status)
-    if priority:
-        properties["Priority"] = _select_prop(priority)
-    if due_date:
-        properties["Due Date"] = _date_prop(due_date)
+    todo_items = extract_todo_items(description or title)
+    page_title = title if title and title.lower() != "todo" else "Todo"
+
+    properties = build_safe_properties(
+        schema=schema,
+        title=page_title,
+        status=status,
+        priority=priority,
+        due_date=due_date,
+    )
 
     children = [
         {
             "object": "block",
             "type": "heading_2",
             "heading_2": {
-                "rich_text": _rich_text("Task details"),
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {"content": "Todo"},
+                    }
+                ]
             },
         },
         {
             "object": "block",
             "type": "paragraph",
             "paragraph": {
-                "rich_text": _rich_text(description or title),
-            },
-        },
-        {
-            "object": "block",
-            "type": "to_do",
-            "to_do": {
-                "rich_text": _rich_text(title),
-                "checked": False,
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": "Created from Second Brain chat.",
+                        },
+                    }
+                ]
             },
         },
     ]
+
+    for item in todo_items:
+        children.append(
+            {
+                "object": "block",
+                "type": "to_do",
+                "to_do": {
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {"content": item[:1800]},
+                        }
+                    ],
+                    "checked": False,
+                },
+            }
+        )
 
     payload = {
         "parent": {
