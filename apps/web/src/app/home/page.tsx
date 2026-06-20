@@ -1,5 +1,5 @@
-import { HomeDashboard } from "@/components/home/HomeDashboard";
+import { HomeMobile } from "@/components/home/HomeMobile";
 
 export default function HomePage() {
-  return <HomeDashboard />;
+  return <HomeMobile />;
 }

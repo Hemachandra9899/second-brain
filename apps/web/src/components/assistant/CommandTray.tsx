@@ -1,10 +1,21 @@
 "use client";
 
-const slashCommands = [
+type CommandItem = {
+  label: string;
+  description: string;
+  insert: string;
+};
+
+const slashCommands: CommandItem[] = [
   {
     label: "/notion",
-    description: "Create or search Notion tasks",
+    description: "Create or ask about Notion pages",
     insert: "/notion ",
+  },
+  {
+    label: "/write",
+    description: "Open clean writing mode",
+    insert: "/write ",
   },
   {
     label: "/task",
@@ -12,44 +23,61 @@ const slashCommands = [
     insert: "/task ",
   },
   {
-    label: "/memory",
-    description: "Search your memory",
-    insert: "/memory ",
-  },
-  {
     label: "/today",
-    description: "Plan today",
+    description: "Plan or review today",
     insert: "/today ",
   },
   {
-    label: "/instagram",
-    description: "Import or ask about Instagram data",
-    insert: "/instagram ",
+    label: "/memory",
+    description: "Search your Second Brain",
+    insert: "/memory ",
   },
 ];
 
-const mentions = [
+const mentions: CommandItem[] = [
   {
     label: "@notion",
-    description: "Use connected Notion workspace",
+    description: "Use connected Notion data",
     insert: "@notion ",
   },
   {
     label: "@memory",
-    description: "Use memory cards and knowledge graph",
+    description: "Use memory cards and graph",
     insert: "@memory ",
   },
   {
     label: "@tasks",
-    description: "Use task database",
+    description: "Use saved tasks",
     insert: "@tasks ",
   },
   {
-    label: "@projects",
-    description: "Use project context",
-    insert: "@projects ",
+    label: "@writing",
+    description: "Use writing blocks",
+    insert: "@writing ",
   },
 ];
+
+function getActiveToken(input: string) {
+  const match = input.match(/(?:^|\s)([\/@][^\s]*)$/);
+  return match?.[1] || "";
+}
+
+export function shouldShowCommandTray(input: string) {
+  const token = getActiveToken(input);
+  return token.startsWith("/") || token.startsWith("@");
+}
+
+export function insertCommandToken(input: string, value: string) {
+  const match = input.match(/(?:^|\s)([\/@][^\s]*)$/);
+
+  if (!match || match.index === undefined) {
+    return `${input.trimEnd()} ${value}`;
+  }
+
+  const tokenStart = input.lastIndexOf(match[1]);
+
+  return `${input.slice(0, tokenStart)}${value}`.replace(/\s+$/, " ");
+}
 
 export function CommandTray({
   input,
@@ -58,28 +86,41 @@ export function CommandTray({
   input: string;
   onSelect: (value: string) => void;
 }) {
-  const trimmed = input.trim();
-  const showSlash = trimmed.startsWith("/");
-  const showMention = trimmed.includes("@") && !showSlash;
+  const token = getActiveToken(input);
+  const isSlash = token.startsWith("/");
+  const isMention = token.startsWith("@");
 
-  if (!showSlash && !showMention) return null;
+  if (!isSlash && !isMention) return null;
 
-  const items = showSlash ? slashCommands : mentions;
+  const query = token.slice(1).toLowerCase();
+  const items = (isSlash ? slashCommands : mentions).filter((item) =>
+    item.label.toLowerCase().includes(query)
+  );
+
+  if (!items.length) return null;
 
   return (
-    <div className="absolute bottom-[5.25rem] left-4 right-4 z-50 mx-auto max-w-md rounded-[1.5rem] bg-white/95 p-2 shadow-2xl backdrop-blur animate-in slide-in-from-bottom-2 duration-200">
+    <div className="absolute bottom-[5.5rem] left-4 right-4 z-50 mx-auto max-w-md rounded-[1.5rem] bg-white/95 p-2 shadow-2xl ring-1 ring-slate-200 backdrop-blur-xl">
       {items.map((item) => (
         <button
           key={item.label}
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onSelect(item.insert)}
           className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-sky-50 active:scale-[0.99]"
         >
-          <div>
-            <p className="text-sm font-semibold text-slate-950">{item.label}</p>
-            <p className="mt-0.5 text-xs text-slate-500">{item.description}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-950">
+              {item.label}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-slate-500">
+              {item.description}
+            </p>
           </div>
 
-          <span className="text-sm text-sky-600">Insert</span>
+          <span className="ml-3 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+            Use
+          </span>
         </button>
       ))}
     </div>

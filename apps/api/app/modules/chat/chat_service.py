@@ -237,6 +237,13 @@ def _handle_create_notion_task(
                 "intent": intent,
                 "task_id": task.id,
                 "notion_page_id": page_id,
+                "created_task": {
+                    "id": task.id,
+                    "title": task.title,
+                    "status": task.status,
+                    "priority": task.priority,
+                    "due_date": task.due_date,
+                },
             }
 
         task.notion_page_id = page_id
@@ -250,14 +257,18 @@ def _handle_create_notion_task(
             pass
 
         return {
-            "answer": (
-                "I created the task locally, but could not create the Notion page.\n\n"
-                f"Reason: `{str(exc)}`"
-            ),
+            "answer": "I created the task locally, but could not create the Notion page.",
             "intent": intent,
             "task_id": task.id,
             "notion_error": str(exc),
             "notion_page": None,
+            "created_task": {
+                "id": task.id,
+                "title": task.title,
+                "status": task.status,
+                "priority": task.priority,
+                "due_date": task.due_date,
+            },
         }
 
     try:
@@ -274,6 +285,13 @@ def _handle_create_notion_task(
             "id": page_id,
             "title": page_title,
             "url": page_url,
+        },
+        "created_task": {
+            "id": task.id,
+            "title": task.title,
+            "status": task.status,
+            "priority": task.priority,
+            "due_date": task.due_date,
         },
     }
 

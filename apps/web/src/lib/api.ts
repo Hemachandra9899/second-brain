@@ -134,10 +134,18 @@ export async function syncTaskToNotion(id: string) {
   return apiPost<Task>(`/tasks/${id}/sync/notion`, {});
 }
 
-export type NotionPageCard = {
+export type NotionPageCardData = {
   id: string;
   title: string;
   url: string;
+};
+
+export type CreatedTaskCardData = {
+  id: string;
+  title: string;
+  status?: string | null;
+  priority?: string | null;
+  due_date?: string | null;
 };
 
 export type AssistantResponse = {
@@ -146,7 +154,13 @@ export type AssistantResponse = {
   intent?: unknown;
   task_id?: string;
   notion_page_id?: string;
-  notion_page?: NotionPageCard | null;
+  notion_page?: NotionPageCardData | null;
+  created_task?: CreatedTaskCardData | null;
+  sources?: {
+    title: string;
+    url?: string;
+    type: "notion" | "memory" | "task" | "writing";
+  }[];
 };
 
 export async function askAssistant(message: string) {

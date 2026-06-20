@@ -6,18 +6,32 @@ import { useRouter } from "next/navigation";
 import { askAssistant } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
-import { CommandTray } from "@/components/assistant/CommandTray";
+import {
+  CommandTray,
+  insertCommandToken,
+  shouldShowCommandTray,
+} from "@/components/assistant/CommandTray";
 import { TypingBubble } from "@/components/assistant/TypingBubble";
-import { NotionPageCard } from "@/components/assistant/NotionPageCard";
+import {
+  NotionPageCard,
+  SourceCards,
+  TaskResultCard,
+} from "@/components/assistant/ActionCards";
+import type {
+  CreatedTaskCardData,
+  NotionPageCardData,
+} from "@/lib/api";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
-  notion_page?: {
-    id: string;
+  notion_page?: NotionPageCardData | null;
+  created_task?: CreatedTaskCardData | null;
+  sources?: {
     title: string;
-    url: string;
-  } | null;
+    url?: string;
+    type: "notion" | "memory" | "task" | "writing";
+  }[];
 };
 
 const starterChips = [
@@ -56,7 +70,7 @@ export function AssistantScreen() {
   const [loading, setLoading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [commandTrayOpen, setCommandTrayOpen] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(false);
 
   const user = getStoredUser();
   const signedIn = isSignedIn();
@@ -83,6 +97,8 @@ export function AssistantScreen() {
           role: "assistant",
           content: res.answer || "I could not generate a response.",
           notion_page: res.notion_page || null,
+          created_task: res.created_task || null,
+          sources: res.sources || [],
         },
       ]);
     } catch {
@@ -101,37 +117,18 @@ export function AssistantScreen() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    setCommandTrayOpen(false);
+    setTrayOpen(false);
     sendMessage();
   }
 
   function insertCommand(value: string) {
-    setInput((prev) => {
-      const parts = prev.split(/(\s+)/);
-      let lastWordIndex = -1;
+    setInput((prev) => insertCommandToken(prev, value));
+    setTrayOpen(false);
 
-      for (let i = parts.length - 1; i >= 0; i--) {
-        if (parts[i].trim()) {
-          lastWordIndex = i;
-          break;
-        }
-      }
-
-      if (lastWordIndex === -1) {
-        return value;
-      }
-
-      const last = parts[lastWordIndex];
-
-      if (last.startsWith("/") || last.startsWith("@")) {
-        parts[lastWordIndex] = value;
-        return parts.join("").replace(/\s+$/, "") + " ";
-      }
-
-      return `${prev.trimEnd()} ${value}`;
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLInputElement>("#assistant-input");
+      el?.focus();
     });
-
-    setCommandTrayOpen(false);
   }
 
   return (
@@ -242,9 +239,17 @@ export function AssistantScreen() {
                   content={message.content}
                 />
 
-                {message.role === "assistant" && message.notion_page ? (
+                {message.role === "assistant" ? (
                   <div className="mr-auto max-w-[88%]">
-                    <NotionPageCard page={message.notion_page} />
+                    {message.created_task ? (
+                      <TaskResultCard task={message.created_task} />
+                    ) : null}
+
+                    {message.notion_page ? (
+                      <NotionPageCard page={message.notion_page} />
+                    ) : null}
+
+                    <SourceCards sources={message.sources} />
                   </div>
                 ) : null}
               </div>
@@ -259,7 +264,7 @@ export function AssistantScreen() {
         </section>
 
         <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
-          {commandTrayOpen ? (
+          {trayOpen ? (
             <CommandTray input={input} onSelect={insertCommand} />
           ) : null}
 
@@ -277,13 +282,12 @@ export function AssistantScreen() {
               className="flex min-w-0 flex-1 items-center rounded-full bg-white px-5 py-4 shadow-lg"
             >
               <input
+                id="assistant-input"
                 value={input}
                 onChange={(e) => {
                   const value = e.target.value;
                   setInput(value);
-
-                  const lastToken = value.split(/\s/).pop() || "";
-                  setCommandTrayOpen(lastToken.startsWith("/") || lastToken.startsWith("@"));
+                  setTrayOpen(shouldShowCommandTray(value));
                 }}
                 placeholder="Ask, /command, or @mention..."
                 className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
