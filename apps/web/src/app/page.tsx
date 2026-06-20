@@ -1,5 +1,5 @@
-import { HomeDashboard } from "@/components/home/HomeDashboard";
+import { AssistantScreen } from "@/components/assistant/AssistantScreen";
 
-export default function HomePage() {
-  return <HomeDashboard />;
+export default function Page() {
+  return <AssistantScreen />;
 }

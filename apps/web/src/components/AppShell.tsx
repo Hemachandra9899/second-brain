@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 import { useMoodTheme } from "@/hooks/useMoodTheme";
+import { SecondBrainLogo } from "@/components/layout/SecondBrainLogo";
 
 type UserInfo = {
   id: string;
@@ -16,7 +17,7 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-export function AppShell({ title = "Second Brain", children }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   const { theme, mood, loading } = useMoodTheme();
   const [user, setUser] = useState<UserInfo | null>(null);
 
@@ -39,10 +40,9 @@ export function AppShell({ title = "Second Brain", children }: AppShellProps) {
     <div className={`min-h-screen bg-gradient-to-br ${theme.background} text-slate-900 transition-all duration-700`}>
       <main className="mx-auto min-h-screen w-full max-w-md px-4 py-5 md:max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
+          <SecondBrainLogo />
+
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-2xl font-semibold tracking-tight">
-              {title}
-            </Link>
             {!loading && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-xs shadow-sm capitalize">
                 <span className={`inline-block h-2 w-2 rounded-full ${
@@ -55,29 +55,13 @@ export function AppShell({ title = "Second Brain", children }: AppShellProps) {
                 {mood}
               </span>
             )}
-          </div>
 
-          <div className="flex items-center gap-3">
-            <nav className="hidden gap-3 md:flex">
-              <Link href="/capture" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Capture
-              </Link>
-              <Link href="/memory" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Memory
-              </Link>
-              <Link href="/projects" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Projects
-              </Link>
-              <Link href="/tasks" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Tasks
-              </Link>
-              <Link href="/knowledge" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Knowledge
-              </Link>
-              <Link href="/mood" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Mood
-              </Link>
-            </nav>
+            <Link
+              href="/home"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-sm shadow-sm backdrop-blur"
+            >
+              ⌂
+            </Link>
 
             {user ? (
               <div className="flex items-center gap-2">
@@ -106,11 +90,22 @@ export function AppShell({ title = "Second Brain", children }: AppShellProps) {
         {children}
 
         <nav className="fixed bottom-4 left-1/2 z-40 flex w-[92%] max-w-md -translate-x-1/2 justify-around rounded-full bg-white/80 px-4 py-3 shadow-xl backdrop-blur-xl md:hidden">
-          <Link href="/capture" className="text-sm">Capture</Link>
-          <Link href="/memory" className="text-sm">Memory</Link>
-          <Link href="/projects" className="text-sm">Projects</Link>
-          <Link href="/tasks" className="text-sm">Tasks</Link>
-          <Link href="/knowledge" className="text-sm">KB</Link>
+          <Link href="/" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
+            <span className="text-lg">💬</span>
+            Chat
+          </Link>
+          <Link href="/capture" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
+            <span className="text-lg">+</span>
+            Capture
+          </Link>
+          <Link href="/memory" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
+            <span className="text-lg">🧠</span>
+            Memory
+          </Link>
+          <Link href="/home" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
+            <span className="text-lg">⌂</span>
+            Home
+          </Link>
         </nav>
       </main>
     </div>
