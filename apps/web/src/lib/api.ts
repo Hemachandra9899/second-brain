@@ -457,6 +457,7 @@ export async function extractWritingTasks(documentId: string) {
 export async function syncWritingToNotion(documentId: string) {
   return apiPost<{
     ok: boolean;
+    writing_document: WritingDocument;
     notion_page: NotionPageCardData;
   }>(`/writing/documents/${documentId}/sync/notion`, {});
 }

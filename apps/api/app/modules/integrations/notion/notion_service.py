@@ -524,51 +524,132 @@ def pull_notion_tasks(access_token: str, database_id: str):
     return response.json().get("results", [])
 
 
-def _writing_block_to_notion(block: dict) -> dict:
-    block_type = block.get("type", "paragraph")
-    text = block.get("text", "")
-
-    rich_text = [
+def _plain_text_block(text: str) -> list[dict]:
+    return [
         {
             "type": "text",
-            "text": {"content": text[:1800]},
+            "text": {
+                "content": (text or "")[:1800],
+            },
         }
     ]
 
-    mapping = {
-        "heading": {
-            "type": "heading_2",
-            "heading_2": {"rich_text": rich_text},
-        },
-        "todo": {
-            "type": "to_do",
-            "to_do": {
-                "rich_text": rich_text,
-                "checked": bool(block.get("checked", False)),
-            },
-        },
-        "bullet": {
-            "type": "bulleted_list_item",
-            "bulleted_list_item": {"rich_text": rich_text},
-        },
-        "quote": {
-            "type": "quote",
-            "quote": {"rich_text": rich_text},
-        },
-        "code": {
-            "type": "code",
-            "code": {"rich_text": rich_text},
-        },
-    }
 
-    entry = mapping.get(block_type)
-    if entry:
-        return {"object": "block", **entry}
+def notion_blocks_from_writing_blocks(blocks: list[dict]) -> list[dict]:
+    notion_blocks = []
+
+    for block in blocks:
+        block_type = block.get("type")
+        text = (block.get("text") or "").strip()
+
+        if not text:
+            continue
+
+        if block_type == "heading":
+            notion_blocks.append(
+                {
+                    "object": "block",
+                    "type": "heading_2",
+                    "heading_2": {
+                        "rich_text": _plain_text_block(text),
+                    },
+                }
+            )
+
+        elif block_type == "todo":
+            notion_blocks.append(
+                {
+                    "object": "block",
+                    "type": "to_do",
+                    "to_do": {
+                        "rich_text": _plain_text_block(text),
+                        "checked": bool(block.get("checked", False)),
+                    },
+                }
+            )
+
+        elif block_type == "bullet":
+            notion_blocks.append(
+                {
+                    "object": "block",
+                    "type": "bulleted_list_item",
+                    "bulleted_list_item": {
+                        "rich_text": _plain_text_block(text),
+                    },
+                }
+            )
+
+        elif block_type == "quote":
+            notion_blocks.append(
+                {
+                    "object": "block",
+                    "type": "quote",
+                    "quote": {
+                        "rich_text": _plain_text_block(text),
+                    },
+                }
+            )
+
+        elif block_type == "code":
+            notion_blocks.append(
+                {
+                    "object": "block",
+                    "type": "code",
+                    "code": {
+                        "rich_text": _plain_text_block(text),
+                        "language": "plain text",
+                    },
+                }
+            )
+
+        else:
+            notion_blocks.append(
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": _plain_text_block(text),
+                    },
+                }
+            )
+
+    if not notion_blocks:
+        notion_blocks.append(
+            {
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": _plain_text_block("Created from Second Brain."),
+                },
+            }
+        )
+
+    return notion_blocks
+
+
+def _find_title_property(schema: dict) -> str:
+    properties = schema.get("properties", {})
+
+    for name, prop in properties.items():
+        if prop.get("type") == "title":
+            return name
+
+    return "Name"
+
+
+def _build_title_only_properties(schema: dict, title: str) -> dict:
+    title_property = _find_title_property(schema)
 
     return {
-        "object": "block",
-        "type": "paragraph",
-        "paragraph": {"rich_text": rich_text},
+        title_property: {
+            "title": [
+                {
+                    "text": {
+                        "content": title[:180],
+                    }
+                }
+            ]
+        }
     }
 
 
@@ -576,31 +657,26 @@ def create_notion_page_from_blocks(
     access_token: str,
     title: str,
     blocks: list[dict],
-    data_source_id: str,
-) -> dict:
+    data_source_id: str | None = None,
+    database_id: str | None = None,
+):
+    resolved_data_source_id = data_source_id
+
+    if not resolved_data_source_id and database_id:
+        resolved_data_source_id = resolve_data_source_id(access_token, database_id)
+
+    if not resolved_data_source_id:
+        raise RuntimeError("No Notion data source selected for writing sync.")
+
     headers = _build_notion_headers(access_token)
-
-    schema = retrieve_data_source(access_token, data_source_id)
-    title_prop_name = find_title_property(schema)
-
-    properties = {
-        title_prop_name: {
-            "title": [
-                {
-                    "text": {"content": title[:180]},
-                }
-            ]
-        }
-    }
-
-    children = [_writing_block_to_notion(b) for b in blocks if b.get("text", "").strip()]
+    schema = retrieve_data_source(access_token, resolved_data_source_id)
 
     payload = {
         "parent": {
-            "data_source_id": data_source_id,
+            "data_source_id": resolved_data_source_id,
         },
-        "properties": properties,
-        "children": children,
+        "properties": _build_title_only_properties(schema, title),
+        "children": notion_blocks_from_writing_blocks(blocks),
     }
 
     response = requests.post(
@@ -611,6 +687,8 @@ def create_notion_page_from_blocks(
     )
 
     if response.status_code >= 400:
-        raise _notion_error("Notion create page from writing failed", response)
+        raise RuntimeError(
+            f"Notion create writing page failed: {response.status_code} {response.text}"
+        )
 
     return response.json()

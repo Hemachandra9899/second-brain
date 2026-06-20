@@ -135,20 +135,25 @@ export default function WritingPage() {
     }
   }
 
-  async function handleSyncNotion() {
+  async function handleSyncToNotion() {
     if (!savedDoc) {
-      setNotice("Save the writing block first, then sync to Notion.");
+      setNotice("Save the writing block first, then send it to Notion.");
       return;
     }
 
     setLoading(true);
+    setNotice("");
 
     try {
       const res = await syncWritingToNotion(savedDoc.id);
       setNotionPage(res.notion_page);
-      setNotice("Synced to Notion.");
-    } catch {
-      setNotice("Could not sync to Notion yet.");
+      setNotice("Created a Notion page from this writing block.");
+    } catch (err) {
+      setNotice(
+        err instanceof Error
+          ? err.message
+          : "Could not sync this writing block to Notion."
+      );
     } finally {
       setLoading(false);
     }
@@ -216,7 +221,7 @@ export default function WritingPage() {
           </button>
 
           <button
-            onClick={handleSyncNotion}
+            onClick={handleSyncToNotion}
             disabled={loading || !savedDoc}
             className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-950 shadow-sm ring-1 ring-slate-200 disabled:opacity-40"
           >
@@ -227,15 +232,21 @@ export default function WritingPage() {
         <BlocksPreview blocks={blocks} />
 
         {notionPage ? (
-          <div className="mt-4 overflow-hidden rounded-[1.6rem] bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="mt-5 overflow-hidden rounded-[1.6rem] bg-white shadow-sm ring-1 ring-slate-200">
             <div className="bg-gradient-to-br from-sky-100 to-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
-                Synced to Notion
+                Created in Notion
               </p>
+
               <h3 className="mt-2 text-xl font-semibold leading-tight tracking-tight text-slate-950">
-                {notionPage.title}
+                {notionPage.title || "New Notion page"}
               </h3>
+
+              <p className="mt-2 text-sm leading-5 text-slate-600">
+                Your writing block was saved as a Notion page.
+              </p>
             </div>
+
             <div className="p-3">
               <a
                 href={notionPage.url}

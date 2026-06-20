@@ -4,13 +4,6 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.models import Task, User, WritingDocument
-from app.modules.integrations.notion.notion_oauth_service import (
-    get_notion_connection,
-    get_decrypted_token,
-)
-from app.modules.integrations.notion.notion_service import (
-    create_notion_page_from_blocks,
-)
 from app.modules.knowledge.knowledge_service import index_knowledge_item
 from app.services.llm_nvidia import ask_json_fast
 
@@ -190,44 +183,6 @@ def extract_tasks_from_writing(
         db.refresh(task)
 
     return created
-
-
-def sync_writing_to_notion(
-    db: Session,
-    doc: WritingDocument,
-    current_user: User,
-) -> dict:
-    conn = get_notion_connection(db, current_user)
-    if not conn:
-        raise RuntimeError("Notion is not connected. Connect it in your profile first.")
-
-    data_source_id = conn.default_data_source_id
-    if not data_source_id:
-        raise RuntimeError("No Notion database selected. Set a default database first.")
-
-    access_token = get_decrypted_token(conn)
-    blocks = json.loads(doc.blocks_json or "[]")
-
-    page = create_notion_page_from_blocks(
-        access_token=access_token,
-        title=doc.title,
-        blocks=blocks,
-        data_source_id=data_source_id,
-    )
-
-    page_id = page.get("id")
-    page_url = page.get("url")
-
-    if page_id:
-        doc.notion_page_id = page_id
-        db.commit()
-        db.refresh(doc)
-
-    return {
-        "id": page_id,
-        "title": doc.title,
-        "url": page_url,
-    }
 
 
 def serialize_writing(doc: WritingDocument) -> dict:

@@ -4,8 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user, require_current_user
+from app.core.config import settings
 from app.db.session import get_db
 from app.models import User, WritingDocument
+from app.modules.integrations.notion.notion_oauth_service import (
+    get_notion_connection,
+    get_decrypted_token,
+)
+from app.modules.integrations.notion.notion_service import (
+    create_notion_page_from_blocks,
+)
 from app.modules.writing.writing_schema import (
     WritingCleanRequest,
     WritingCreateRequest,
@@ -16,7 +24,6 @@ from app.modules.writing.writing_service import (
     create_writing_document,
     extract_tasks_from_writing,
     serialize_writing,
-    sync_writing_to_notion,
 )
 
 router = APIRouter()
@@ -154,7 +161,7 @@ def extract_document_tasks(
 
 
 @router.post("/documents/{document_id}/sync/notion")
-def sync_document_to_notion(
+def sync_writing_to_notion(
     document_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_current_user),
@@ -171,12 +178,45 @@ def sync_document_to_notion(
     if not doc:
         raise HTTPException(status_code=404, detail="Writing document not found")
 
+    conn = get_notion_connection(db, current_user)
+
+    if not conn:
+        raise HTTPException(status_code=400, detail="Notion is not connected")
+
+    access_token = get_decrypted_token(conn)
+
+    blocks = json.loads(doc.blocks_json or "[]")
+
+    data_source_id = getattr(conn, "default_data_source_id", None)
+    database_id = getattr(conn, "default_database_id", None) or settings.notion_tasks_database_id
+
+    if not data_source_id and not database_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No Notion database/data source selected",
+        )
+
     try:
-        notion_page = sync_writing_to_notion(db, doc, current_user)
-    except RuntimeError as exc:
+        page = create_notion_page_from_blocks(
+            access_token=access_token,
+            title=doc.title,
+            blocks=blocks,
+            data_source_id=data_source_id,
+            database_id=database_id,
+        )
+    except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+    doc.notion_page_id = page.get("id")
+    db.commit()
+    db.refresh(doc)
 
     return {
         "ok": True,
-        "notion_page": notion_page,
+        "writing_document": serialize_writing(doc),
+        "notion_page": {
+            "id": page.get("id"),
+            "title": doc.title,
+            "url": page.get("url"),
+        },
     }
