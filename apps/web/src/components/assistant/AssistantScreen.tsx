@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { askAssistant } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 
@@ -10,45 +11,50 @@ type Message = {
   content: string;
 };
 
-const chips = [
+const starterChips = [
   "Plan my day",
-  "Capture idea",
-  "Search memory",
-  "Create task",
-  "Import data",
+  "Search my memory",
+  "Create a task",
+  "Capture an idea",
 ];
 
-const insights = [
+const quickCards = [
   {
     title: "Today Brief",
-    body: "Ask what matters next across your tasks, memories, mood, and projects.",
+    body: "Summarize my tasks, mood, projects, and what matters next.",
+    prompt: "Give me my Today Brief.",
   },
   {
-    title: "Memory Search",
-    body: "Search your personal context graph and source-backed knowledge.",
+    title: "Search Memory",
+    body: "Ask across tasks, notes, memory cards, and graph context.",
+    prompt: "What do you remember about my current projects?",
   },
 ];
 
 export function AssistantScreen() {
+  const router = useRouter();
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       content:
-        "Hey, I am your Second Brain. Ask me anything, or capture a task, idea, note, link, or memory.",
+        "Hey, I am your Second Brain. Ask me anything, capture a thought, or plan your day.",
     },
   ]);
+
   const [input, setInput] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const user = getStoredUser();
   const signedIn = isSignedIn();
+  const hasStarted = messages.length > 1;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, loading]);
 
   async function sendMessage(text?: string) {
     const content = (text || input).trim();
@@ -60,6 +66,7 @@ export function AssistantScreen() {
 
     try {
       const res = await askAssistant(content);
+
       setMessages((prev) => [
         ...prev,
         {
@@ -73,7 +80,7 @@ export function AssistantScreen() {
         {
           role: "assistant",
           content:
-            "Backend is not reachable yet. Once Render is fixed, I will answer from your Second Brain.",
+            "I could not reach the backend yet. Once Render is healthy, I will answer using your Second Brain.",
         },
       ]);
     } finally {
@@ -81,166 +88,180 @@ export function AssistantScreen() {
     }
   }
 
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    sendMessage();
+  }
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,#ffd6e8_0%,#f7dce8_28%,#edf7ff_68%,#f8fbff_100%)] text-slate-950">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden border-x border-white/50 bg-white/10 shadow-2xl backdrop-blur">
-        <header className="sticky top-0 z-30 flex items-center justify-between px-5 py-5">
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/45 text-2xl shadow-sm backdrop-blur"
-            aria-label="Open menu"
-          >
-            ‹
-          </button>
+    <main className="min-h-[100dvh] bg-sky-50 text-slate-950">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-sky-100 via-blue-50 to-white shadow-2xl">
+        {/* Fixed top bar */}
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/50 bg-sky-50/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => router.push("/home")}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-2xl text-slate-900 shadow-sm active:scale-95"
+              aria-label="Go home"
+            >
+              ‹
+            </button>
 
-          <div className="text-center">
-            <p className="text-lg font-semibold tracking-tight">AI Assistant</p>
-            <p className="text-[11px] font-medium text-pink-600">
-              Second Brain model ↻
-            </p>
+            <div className="text-center">
+              <p className="text-lg font-semibold tracking-tight text-slate-950">
+                Second Brain
+              </p>
+              <p className="text-[11px] font-medium text-sky-600">
+                AI Assistant
+              </p>
+            </div>
+
+            <button
+              onClick={() => setProfileOpen(true)}
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/80 text-sm font-semibold text-slate-900 shadow-sm active:scale-95"
+              aria-label="Open profile"
+            >
+              {user?.picture ? (
+                <img
+                  src={user.picture}
+                  alt={user.name || "Profile"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                "•••"
+              )}
+            </button>
           </div>
-
-          <button
-            onClick={() => setProfileOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/45 text-lg shadow-sm backdrop-blur"
-            aria-label="Open profile"
-          >
-            {user?.picture ? (
-              <img
-                src={user.picture}
-                alt={user.name || "Profile"}
-                className="h-10 w-10 rounded-full object-cover"
-              />
-            ) : (
-              "•••"
-            )}
-          </button>
         </header>
 
-        <section className="px-5 pt-4 text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[1.4rem] bg-slate-950 text-base font-bold text-white shadow-xl">
-            SB
-          </div>
+        {/* Scrollable chat body */}
+        <section className="flex-1 overflow-y-auto px-4 pb-32 pt-24">
+          {!hasStarted ? (
+            <div className="pb-5">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[1.35rem] bg-slate-950 text-sm font-bold text-white shadow-xl">
+                SB
+              </div>
 
-          <h1 className="mx-auto max-w-sm text-5xl font-semibold leading-[0.95] tracking-[-0.045em] text-slate-950">
-            Ready to organize your second brain?
-          </h1>
+              <h1 className="mx-auto max-w-xs text-center text-4xl font-semibold leading-[0.98] tracking-[-0.04em] text-slate-950">
+                Ready to organize your second brain?
+              </h1>
 
-          <p className="mt-4 text-sm leading-6 text-slate-600">
-            Capture tasks, search memory, plan your day, and connect your knowledge.
-          </p>
-        </section>
-
-        <section className="mt-8 flex gap-2 overflow-x-auto px-5 pb-2 [scrollbar-width:none]">
-          {chips.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => sendMessage(chip)}
-              className="shrink-0 rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur"
-            >
-              {chip}
-            </button>
-          ))}
-        </section>
-
-        {!signedIn ? (
-          <section className="px-5 pt-4">
-            <div className="rounded-[2rem] bg-white/65 p-4 shadow-sm backdrop-blur">
-              <p className="text-sm font-semibold">Save your memory</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
-                Sign in to keep tasks, knowledge, mood, and memories private to you.
+              <p className="mx-auto mt-4 max-w-xs text-center text-sm leading-6 text-slate-600">
+                Ask, capture, plan, or search your personal memory.
               </p>
-              <Link
-                href="/login"
-                className="mt-3 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white"
-              >
-                Continue with Google
-              </Link>
-            </div>
-          </section>
-        ) : null}
 
-        <section className="mt-8 px-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Quick insights</h2>
-            <button
-              onClick={() => setMenuOpen(true)}
-              className="rounded-full bg-white/50 px-3 py-1 text-sm"
-            >
-              ≡
-            </button>
-          </div>
+              {!signedIn ? (
+                <div className="mt-5 rounded-[1.75rem] bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Sign in to save memory
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    Keep tasks, notes, mood, projects, and graph memory private
+                    to you.
+                  </p>
+                  <Link
+                    href="/login"
+                    className="mt-3 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white"
+                  >
+                    Continue with Google
+                  </Link>
+                </div>
+              ) : null}
 
-          <div className="grid grid-cols-2 gap-3">
-            {insights.map((item) => (
-              <button
-                key={item.title}
-                onClick={() => sendMessage(item.title)}
-                className="rounded-[1.75rem] bg-white/75 p-4 text-left shadow-sm backdrop-blur transition active:scale-[0.98]"
-              >
-                <div className="mb-5 h-20 rounded-[1.25rem] bg-gradient-to-br from-sky-100 via-pink-100 to-white" />
-                <p className="text-lg font-semibold tracking-tight">{item.title}</p>
-                <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-600">
-                  {item.body}
-                </p>
-              </button>
-            ))}
-          </div>
-        </section>
+              <div className="mt-6 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none]">
+                {starterChips.map((chip) => (
+                  <button
+                    key={chip}
+                    onClick={() => sendMessage(chip)}
+                    className="shrink-0 rounded-full bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm active:scale-95"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
 
-        <section className="flex-1 space-y-3 px-5 pb-32 pt-6">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={
-                message.role === "user"
-                  ? "ml-10 rounded-[1.75rem] bg-slate-950 px-4 py-3 text-sm leading-6 text-white shadow-sm"
-                  : "mr-10 rounded-[1.75rem] bg-white/75 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm backdrop-blur"
-              }
-            >
-              {message.content}
-            </div>
-          ))}
-
-          {loading ? (
-            <div className="mr-10 rounded-[1.75rem] bg-white/75 px-4 py-3 text-sm text-slate-500 shadow-sm">
-              Thinking...
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                {quickCards.map((card) => (
+                  <button
+                    key={card.title}
+                    onClick={() => sendMessage(card.prompt)}
+                    className="rounded-[1.75rem] bg-white/85 p-4 text-left shadow-sm active:scale-[0.98]"
+                  >
+                    <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-sky-100 via-blue-100 to-white" />
+                    <p className="text-lg font-semibold tracking-tight">
+                      {card.title}
+                    </p>
+                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-600">
+                      {card.body}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
 
-          <div ref={bottomRef} />
+          <div className="space-y-3">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={
+                  message.role === "user"
+                    ? "ml-auto max-w-[82%] rounded-[1.35rem] rounded-br-md bg-sky-600 px-4 py-3 text-sm leading-6 text-white shadow-sm"
+                    : "mr-auto max-w-[86%] rounded-[1.35rem] rounded-bl-md bg-white/90 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm"
+                }
+              >
+                {message.content}
+              </div>
+            ))}
+
+            {loading ? (
+              <div className="mr-auto max-w-[70%] rounded-[1.35rem] rounded-bl-md bg-white/90 px-4 py-3 text-sm text-slate-500 shadow-sm">
+                Thinking...
+              </div>
+            ) : null}
+
+            <div ref={bottomRef} />
+          </div>
         </section>
 
-        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-transparent px-4 pb-5 pt-8">
-          <div className="flex items-center gap-2">
+        {/* Fixed bottom chat input */}
+        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setMenuOpen(true)}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl shadow-lg"
+              onClick={() => setActionsOpen(true)}
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-slate-950 shadow-lg active:scale-95"
+              aria-label="Open actions"
             >
               +
             </button>
 
             <form
-              className="flex min-w-0 flex-1 items-center rounded-full bg-white px-4 py-3 shadow-lg"
-              onSubmit={(e) => {
-                e.preventDefault();
-                sendMessage();
-              }}
+              onSubmit={submit}
+              className="flex min-w-0 flex-1 items-center rounded-full bg-white px-5 py-4 shadow-lg"
             >
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask, capture, or plan anything..."
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
               />
-              <button type="submit" className="ml-2 text-xl">
-                {loading ? "…" : "↗"}
+
+              <button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="ml-3 text-2xl text-slate-950 disabled:opacity-30"
+                aria-label="Send"
+              >
+                ↗
               </button>
             </form>
           </div>
         </footer>
 
-        {menuOpen ? <MenuSheet onClose={() => setMenuOpen(false)} /> : null}
+        {actionsOpen ? (
+          <ActionsSheet onClose={() => setActionsOpen(false)} />
+        ) : null}
+
         {profileOpen ? (
           <ProfileSheet
             onClose={() => setProfileOpen(false)}
@@ -253,24 +274,27 @@ export function AssistantScreen() {
   );
 }
 
-function MenuSheet({ onClose }: { onClose: () => void }) {
+function ActionsSheet({ onClose }: { onClose: () => void }) {
   const items: [string, string][] = [
     ["Home overview", "/home"],
     ["Capture anything", "/capture"],
+    ["Import Instagram ZIP", "/imports/instagram"],
     ["Memory cards", "/memory"],
     ["Projects", "/projects"],
     ["Tasks", "/tasks"],
     ["Knowledge base", "/knowledge"],
     ["Mood", "/mood"],
-    ["Import Instagram ZIP", "/imports/instagram"],
   ];
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto mt-16 max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
+      <div className="mx-auto mt-auto max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-semibold">Second Brain</p>
-          <button onClick={onClose} className="rounded-full bg-slate-100 px-3 py-1">
+          <p className="text-lg font-semibold">Actions</p>
+          <button
+            onClick={onClose}
+            className="rounded-full bg-slate-100 px-3 py-1 text-sm"
+          >
             Close
           </button>
         </div>
@@ -281,7 +305,7 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
               key={href}
               href={href}
               onClick={onClose}
-              className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+              className="rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-slate-700"
             >
               {label}
             </Link>
@@ -303,31 +327,37 @@ function ProfileSheet({
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto mt-16 max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
+      <div className="mx-auto mt-auto max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-lg font-semibold">Profile</p>
-          <button onClick={onClose} className="rounded-full bg-slate-100 px-3 py-1">
+          <button
+            onClick={onClose}
+            className="rounded-full bg-slate-100 px-3 py-1 text-sm"
+          >
             Close
           </button>
         </div>
 
         {signedIn ? (
-          <div className="rounded-[1.5rem] bg-slate-50 p-4">
+          <div className="rounded-[1.5rem] bg-sky-50 p-4">
             <div className="flex items-center gap-3">
               {user?.picture ? (
                 <img
                   src={user.picture}
                   alt={user.name || "Profile"}
-                  className="h-12 w-12 rounded-full"
+                  className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
                   SB
                 </div>
               )}
-              <div>
-                <p className="font-semibold">{user?.name || "Signed in"}</p>
-                <p className="text-xs text-slate-500">{user?.email}</p>
+
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-950">
+                  {user?.name || "Signed in"}
+                </p>
+                <p className="truncate text-xs text-slate-500">{user?.email}</p>
               </div>
             </div>
           </div>
@@ -343,14 +373,14 @@ function ProfileSheet({
         <div className="mt-4 grid gap-2">
           <Link
             href="/settings/integrations"
-            className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+            className="rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-slate-700"
           >
             Connect Notion
           </Link>
 
           <Link
             href="/imports/instagram"
-            className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+            className="rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-slate-700"
           >
             Upload Instagram export
           </Link>

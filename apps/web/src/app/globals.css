@@ -9,16 +9,21 @@
 html,
 body {
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(186, 230, 253, 0.75), transparent 32rem),
-    linear-gradient(135deg, #f0f9ff 0%, #ecfeff 45%, #dbeafe 100%);
+  background: #f0f9ff;
   color: #0f172a;
 }
 
 * {
   box-sizing: border-box;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
 }
