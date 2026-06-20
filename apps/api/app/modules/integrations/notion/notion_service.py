@@ -1,48 +1,47 @@
-from notion_client import Client
-from app.core.config import settings
+def _build_notion_headers(access_token: str) -> dict:
+    from app.core.config import settings
 
-
-def get_notion_client() -> Client:
-    if not settings.notion_api_key:
-        raise RuntimeError("NOTION_API_KEY is missing")
-    return Client(auth=settings.notion_api_key)
+    return {
+        "Authorization": f"Bearer {access_token}",
+        "Notion-Version": settings.notion_api_version,
+        "Content-Type": "application/json",
+    }
 
 
 def create_notion_task(
+    access_token: str,
     title: str,
     description: str | None = None,
     status: str = "Todo",
     due_date: str | None = None,
     priority: str = "Normal",
+    database_id: str | None = None,
 ):
-    if not settings.notion_tasks_database_id:
-        raise RuntimeError("NOTION_TASKS_DATABASE_ID is missing")
-
-    notion = get_notion_client()
+    headers = _build_notion_headers(access_token)
 
     properties = {
         "Name": {
             "title": [
                 {
                     "text": {
-                        "content": title
+                        "content": title,
                     }
                 }
             ]
         },
         "Status": {
             "select": {
-                "name": status
+                "name": status,
             }
         },
         "Priority": {
             "select": {
-                "name": priority
+                "name": priority,
             }
         },
         "Source": {
             "select": {
-                "name": "Second Brain"
+                "name": "Second Brain",
             }
         },
     }
@@ -50,14 +49,22 @@ def create_notion_task(
     if due_date:
         properties["Due Date"] = {
             "date": {
-                "start": due_date
+                "start": due_date,
             }
         }
 
-    return notion.pages.create(
-        parent={"database_id": settings.notion_tasks_database_id},
-        properties=properties,
-        children=[
+        from app.core.config import settings as _settings
+
+    resolved_database_id = database_id or _settings.notion_tasks_database_id
+    if not resolved_database_id:
+        raise RuntimeError("No Notion database configured for task sync")
+
+    import requests
+
+    payload: dict = {
+        "parent": {"database_id": resolved_database_id},
+        "properties": properties,
+        "children": [
             {
                 "object": "block",
                 "type": "paragraph",
@@ -66,17 +73,28 @@ def create_notion_task(
                         {
                             "type": "text",
                             "text": {
-                                "content": description or ""
-                            }
+                                "content": description or "",
+                            },
                         }
                     ]
                 },
             }
         ],
+    }
+
+    response = requests.post(
+        "https://api.notion.com/v1/pages",
+        headers=headers,
+        json=payload,
+        timeout=30,
     )
+
+    response.raise_for_status()
+    return response.json()
 
 
 def update_notion_task(
+    access_token: str,
     page_id: str,
     title: str,
     description: str | None = None,
@@ -84,31 +102,31 @@ def update_notion_task(
     due_date: str | None = None,
     priority: str = "Normal",
 ):
-    notion = get_notion_client()
+    headers = _build_notion_headers(access_token)
 
     properties = {
         "Name": {
             "title": [
                 {
                     "text": {
-                        "content": title
+                        "content": title,
                     }
                 }
             ]
         },
         "Status": {
             "select": {
-                "name": status
+                "name": status,
             }
         },
         "Priority": {
             "select": {
-                "name": priority
+                "name": priority,
             }
         },
         "Source": {
             "select": {
-                "name": "Second Brain"
+                "name": "Second Brain",
             }
         },
     }
@@ -116,30 +134,41 @@ def update_notion_task(
     if due_date:
         properties["Due Date"] = {
             "date": {
-                "start": due_date
+                "start": due_date,
             }
         }
 
-    return notion.pages.update(
-        page_id=page_id,
-        properties=properties,
+    import requests
+
+    response = requests.patch(
+        f"https://api.notion.com/v1/pages/{page_id}",
+        headers=headers,
+        json={"properties": properties},
+        timeout=30,
     )
 
+    response.raise_for_status()
+    return response.json()
 
-def pull_notion_tasks():
-    if not settings.notion_tasks_database_id:
-        raise RuntimeError("NOTION_TASKS_DATABASE_ID is missing")
 
-    notion = get_notion_client()
+def pull_notion_tasks(access_token: str, database_id: str):
+    headers = _build_notion_headers(access_token)
 
-    result = notion.databases.query(
-        database_id=settings.notion_tasks_database_id,
-        sorts=[
-            {
-                "timestamp": "last_edited_time",
-                "direction": "descending",
-            }
-        ],
+    import requests
+
+    response = requests.post(
+        f"https://api.notion.com/v1/databases/{database_id}/query",
+        headers=headers,
+        json={
+            "sorts": [
+                {
+                    "timestamp": "last_edited_time",
+                    "direction": "descending",
+                }
+            ]
+        },
+        timeout=30,
     )
 
-    return result.get("results", [])
+    response.raise_for_status()
+    return response.json().get("results", [])

@@ -17,7 +17,10 @@ class Settings(BaseSettings):
     pinecone_region: str = "us-east-1"
     pinecone_dimension: int = 1024
 
-    notion_api_key: str | None = None
+    notion_oauth_client_id: str | None = None
+    notion_oauth_client_secret: str | None = None
+    notion_oauth_redirect_uri: str = "http://localhost:8000/integrations/notion/callback"
+    notion_api_version: str = "2026-03-11"
     notion_tasks_database_id: str | None = None
 
     openwa_base_url: str | None = None
