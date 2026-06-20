@@ -159,9 +159,10 @@ Message:
     }
 
 
-def save_mood_event(db: Session, text: str, mood_data: dict) -> MoodEvent:
+def save_mood_event(db: Session, text: str, mood_data: dict, user_id: str | None = None) -> MoodEvent:
     event = MoodEvent(
         id=str(uuid4()),
+        user_id=user_id,
         text=text,
         mood=mood_data.get("mood", "neutral"),
         intensity=mood_data.get("intensity", "medium"),
@@ -179,8 +180,13 @@ def save_mood_event(db: Session, text: str, mood_data: dict) -> MoodEvent:
     return event
 
 
-def get_latest_mood(db: Session) -> dict:
-    event = db.query(MoodEvent).order_by(MoodEvent.created_at.desc()).first()
+def get_latest_mood(db: Session, user_id: str | None = None) -> dict:
+    query = db.query(MoodEvent).order_by(MoodEvent.created_at.desc())
+
+    if user_id:
+        query = query.filter(MoodEvent.user_id == user_id)
+
+    event = query.first()
 
     if not event:
         mood = "neutral"

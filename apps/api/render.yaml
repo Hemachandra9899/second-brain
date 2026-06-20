@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: second-brain-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_LLM_MODEL
+        value: meta/llama-3.1-70b-instruct
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX
+        value: second-brain-demo
+      - key: PINECONE_CLOUD
+        value: aws
+      - key: PINECONE_REGION
+        value: us-east-1
+      - key: PINECONE_DIMENSION
+        value: "1024"
+      - key: NOTION_API_KEY
+        sync: false
+      - key: NOTION_TASKS_DATABASE_ID
+        sync: false

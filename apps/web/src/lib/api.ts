@@ -1,8 +1,27 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+function authHeaders(): Record<string, string> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  const token = localStorage.getItem("second_brain_token");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     cache: "no-store",
+    headers: {
+      ...authHeaders(),
+    },
   });
 
   if (!res.ok) {
@@ -17,6 +36,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -69,6 +89,7 @@ export async function patchTask(
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
     },
     body: JSON.stringify(input),
   });
@@ -83,6 +104,9 @@ export async function patchTask(
 export async function deleteTask(id: string) {
   const res = await fetch(`${API_URL}/tasks/${id}`, {
     method: "DELETE",
+    headers: {
+      ...authHeaders(),
+    },
   });
 
   if (!res.ok) {
@@ -101,6 +125,10 @@ export async function syncTaskToNotion(id: string) {
 }
 
 export async function askAssistant(message: string) {
+  return apiPost<{ answer: string; mood?: unknown }>("/chat", { message });
+}
+
+export async function chat(message: string) {
   return apiPost<{ answer: string; mood?: unknown }>("/chat", { message });
 }
 
@@ -145,9 +173,41 @@ export async function getLatestMood() {
   return apiGet<{ mood: string; theme: unknown; created_at?: string | null }>("/mood/latest");
 }
 
+export type CaptureResponse = {
+  capture_type: string;
+  summary?: string;
+  suggested_next_action?: string;
+  created_task?: Task | null;
+  created_knowledge_item?: KnowledgeItem | null;
+  answer?: any;
+};
+
+export async function captureAnything(text: string) {
+  return apiPost<CaptureResponse>("/capture", { text });
+}
+
+export type TodayBrief = {
+  greeting: string;
+  summary: string;
+  priorities: {
+    title: string;
+    reason: string;
+    source_type: string;
+  }[];
+  mood_note: string;
+  suggested_next_action: string;
+};
+
+export async function getTodayBrief() {
+  return apiGet<TodayBrief>("/brief/today");
+}
+
 export async function deleteKnowledgeItem(id: string) {
   const res = await fetch(`${API_URL}/knowledge/items/${id}`, {
     method: "DELETE",
+    headers: {
+      ...authHeaders(),
+    },
   });
 
   if (!res.ok) {

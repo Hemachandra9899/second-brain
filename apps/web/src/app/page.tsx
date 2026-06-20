@@ -1,7 +1,8 @@
-import Link from "next/link";
+"use client";
+
 import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
-import { PillChip } from "@/components/PillChip";
+import { TodayBriefCard } from "@/components/TodayBriefCard";
 
 export default function HomePage() {
   return (
@@ -16,30 +17,8 @@ export default function HomePage() {
         </p>
       </section>
 
-      <div className="mb-6 flex gap-3 overflow-x-auto pb-2">
-        <PillChip label="Tasks" active />
-        <PillChip label="Knowledge" />
-        <PillChip label="Notion" />
-        <PillChip label="GraphRAG" />
-      </div>
-
       <section className="grid gap-5 md:grid-cols-3">
-        <GlassCard className="md:col-span-2">
-          <p className="text-sm font-medium text-sky-600">Today</p>
-          <h2 className="mt-2 text-3xl font-semibold">Plan your day with context</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Pull tasks from Notion, enrich them with your knowledge base, and ask the assistant what to do next.
-          </p>
-
-          <div className="mt-6 flex gap-3">
-            <Link href="/tasks" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white">
-              View tasks →
-            </Link>
-            <Link href="/assistant" className="rounded-full bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow">
-              Ask AI
-            </Link>
-          </div>
-        </GlassCard>
+        <TodayBriefCard />
 
         <GlassCard>
           <p className="text-sm font-medium text-sky-600">System</p>

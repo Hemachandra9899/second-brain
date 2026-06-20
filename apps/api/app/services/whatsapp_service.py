@@ -19,6 +19,12 @@ async def send_whatsapp_text(
     to: str,
     text: str,
 ):
+    if not settings.openwa_base_url:
+        return {
+            "ok": False,
+            "error": "OpenWA not configured",
+        }
+
     url = f"{settings.openwa_base_url}/api/sessions/{session_id}/messages/send-text"
 
     payload = {

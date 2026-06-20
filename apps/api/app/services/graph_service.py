@@ -46,7 +46,7 @@ Text:
     return _safe_json_loads(result)
 
 
-def get_or_create_entity(db: Session, name: str, type_: str) -> Entity:
+def get_or_create_entity(db: Session, name: str, type_: str, user_id: str | None = None) -> Entity:
     normalized_name = name.strip()
 
     existing = (
@@ -61,6 +61,7 @@ def get_or_create_entity(db: Session, name: str, type_: str) -> Entity:
 
     entity = Entity(
         id=str(uuid4()),
+        user_id=user_id,
         name=normalized_name,
         type=type_,
     )
@@ -72,7 +73,7 @@ def get_or_create_entity(db: Session, name: str, type_: str) -> Entity:
     return entity
 
 
-def extract_and_store_graph(db: Session, source_item_id: str, title: str, text: str):
+def extract_and_store_graph(db: Session, source_item_id: str, title: str, text: str, user_id: str | None = None):
     graph = extract_entities_and_relationships(title=title, text=text)
 
     entities = graph.get("entities", [])
@@ -87,18 +88,20 @@ def extract_and_store_graph(db: Session, source_item_id: str, title: str, text: 
         if not name:
             continue
 
-        entity = get_or_create_entity(db, name=name, type_=type_)
+        entity = get_or_create_entity(db, name=name, type_=type_, user_id=user_id)
         entity_map[name] = entity
 
     source_entity = get_or_create_entity(
         db=db,
         name=f"knowledge_item:{source_item_id}",
         type_="source",
+        user_id=user_id,
     )
 
     for entity in entity_map.values():
         relationship = Relationship(
             id=str(uuid4()),
+            user_id=user_id,
             from_entity_id=source_entity.id,
             to_entity_id=entity.id,
             relation_type="mentions",
@@ -115,6 +118,7 @@ def extract_and_store_graph(db: Session, source_item_id: str, title: str, text: 
 
         relationship = Relationship(
             id=str(uuid4()),
+            user_id=user_id,
             from_entity_id=entity_map[from_name].id,
             to_entity_id=entity_map[to_name].id,
             relation_type=rel_type,

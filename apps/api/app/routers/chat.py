@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.auth import get_current_user
 from app.services.llm_nvidia import ask_llm
 from app.services.mood_service import detect_mood, save_mood_event
 
@@ -16,7 +17,11 @@ class ChatRequest(BaseModel):
 
 
 @router.post("")
-def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+def chat(
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     mood_data = detect_mood(
         text=payload.message,
         recent_context=payload.recent_context,
@@ -26,6 +31,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         db=db,
         text=payload.message,
         mood_data=mood_data,
+        user_id=current_user.id if current_user else None,
     )
 
     tone = mood_data.get("recommended_tone", "calm_supportive")

@@ -6,7 +6,7 @@ from app.services.llm_nvidia import ask_llm
 from app.services.graph_service import extract_entities_and_relationships, get_related_graph_context
 
 
-def ask_knowledge_base(db: Session, query: str):
+def ask_knowledge_base(db: Session, query: str, user_id: str | None = None):
     query_embedding = embed_text(query, input_type="query")
 
     results = search(

@@ -29,9 +29,11 @@ def index_knowledge_item(
     raw_text: str,
     source_type: str = "note",
     source_id: str | None = None,
+    user_id: str | None = None,
 ) -> KnowledgeItem:
     item = KnowledgeItem(
         id=str(uuid4()),
+        user_id=user_id,
         source_type=source_type,
         source_id=source_id or str(uuid4()),
         title=title,
@@ -77,6 +79,7 @@ def index_knowledge_item(
         source_item_id=item.id,
         title=title,
         text=raw_text,
+        user_id=user_id,
     )
 
     return item
@@ -99,6 +102,7 @@ Source: {task.source}
     if not existing:
         item = KnowledgeItem(
             id=item_id,
+            user_id=task.user_id,
             source_type="task",
             source_id=task.id,
             title=task.title,
@@ -151,11 +155,17 @@ Source: {task.source}
         source_item_id=item_id,
         title=task.title,
         text=raw_text,
+        user_id=task.user_id,
     )
 
 
-def delete_knowledge_item(db: Session, item_id: str):
-    item = db.query(KnowledgeItem).filter(KnowledgeItem.id == item_id).first()
+def delete_knowledge_item(db: Session, item_id: str, user_id: str | None = None):
+    query = db.query(KnowledgeItem).filter(KnowledgeItem.id == item_id)
+
+    if user_id:
+        query = query.filter(KnowledgeItem.user_id == user_id)
+
+    item = query.first()
 
     if not item:
         return False

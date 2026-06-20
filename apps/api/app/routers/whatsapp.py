@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db.models import Task, WhatsAppMessage
+from app.core.auth import get_current_user
 from app.services.intent_service import classify_whatsapp_intent
 from app.services.mood_service import detect_mood, save_mood_event
 from app.services.knowledge_service import index_task_as_knowledge, index_knowledge_item
@@ -71,7 +72,11 @@ def build_reply(intent: str, action_result: dict, mood_data: dict) -> str:
 
 
 @router.post("/webhook")
-async def openwa_webhook(request: Request, db: Session = Depends(get_db)):
+async def openwa_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     payload = await request.json()
     normalized = extract_openwa_message(payload)
 
@@ -83,14 +88,17 @@ async def openwa_webhook(request: Request, db: Session = Depends(get_db)):
     if not text:
         return {"ok": False, "reason": "empty_message"}
 
+    user_id = current_user.id if current_user else None
+
     mood_data = detect_mood(text=text)
-    save_mood_event(db=db, text=text, mood_data=mood_data)
+    save_mood_event(db=db, text=text, mood_data=mood_data, user_id=user_id)
 
     intent_data = classify_whatsapp_intent(text)
     intent = intent_data.get("intent", "general_chat")
 
     message_row = WhatsAppMessage(
         id=str(uuid4()),
+        user_id=user_id,
         phone=phone,
         sender_name=sender_name,
         direction="inbound",
@@ -109,6 +117,7 @@ async def openwa_webhook(request: Request, db: Session = Depends(get_db)):
     if intent == "create_task":
         task = Task(
             id=str(uuid4()),
+            user_id=user_id,
             title=intent_data.get("title") or text[:80],
             description=intent_data.get("description") or text,
             status="Todo",
@@ -138,6 +147,7 @@ async def openwa_webhook(request: Request, db: Session = Depends(get_db)):
             raw_text=intent_data.get("description") or text,
             source_type="whatsapp",
             source_id=message_row.id,
+            user_id=user_id,
         )
 
         message_row.created_knowledge_item_id = item.id
@@ -152,6 +162,7 @@ async def openwa_webhook(request: Request, db: Session = Depends(get_db)):
         action_result = ask_knowledge_base(
             db=db,
             query=text,
+            user_id=user_id,
         )
 
     else:
@@ -161,6 +172,7 @@ async def openwa_webhook(request: Request, db: Session = Depends(get_db)):
             raw_text=text,
             source_type="whatsapp",
             source_id=message_row.id,
+            user_id=user_id,
         )
 
         message_row.created_knowledge_item_id = item.id

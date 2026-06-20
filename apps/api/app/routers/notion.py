@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.auth import get_current_user
 from app.db.models import Task
 from app.services.notion_service import pull_notion_tasks
 from app.services.knowledge_service import index_task_as_knowledge
@@ -36,7 +37,10 @@ def extract_date(page: dict, key: str) -> str | None:
 
 
 @router.post("/sync/pull")
-def pull_from_notion(db: Session = Depends(get_db)):
+def pull_from_notion(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     pages = pull_notion_tasks()
     synced = 0
 
@@ -59,6 +63,7 @@ def pull_from_notion(db: Session = Depends(get_db)):
         else:
             task = Task(
                 id=str(uuid4()),
+                user_id=current_user.id if current_user else None,
                 title=title,
                 description=None,
                 status=status,
