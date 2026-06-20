@@ -20,8 +20,6 @@ from app.modules.integrations.notion.notion_oauth_service import (
 from app.modules.integrations.notion.notion_service import (
     pull_notion_tasks,
     search_notion_databases,
-    retrieve_notion_database,
-    resolve_data_source_id,
 )
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge
 
@@ -51,7 +49,14 @@ def list_notion_databases(
         raise HTTPException(status_code=400, detail="Notion not connected")
 
     access_token = get_decrypted_token(conn)
-    databases = search_notion_databases(access_token)
+
+    try:
+        databases = search_notion_databases(access_token)
+    except Exception as exc:
+        return {
+            "databases": [],
+            "error": str(exc),
+        }
 
     return {"databases": databases}
 
@@ -66,11 +71,8 @@ def set_default_notion_database(
     if not conn:
         raise HTTPException(status_code=400, detail="Notion not connected")
 
-    access_token = get_decrypted_token(conn)
-    data_source_id = resolve_data_source_id(access_token, payload.database_id)
-
     conn.default_database_id = payload.database_id
-    conn.default_data_source_id = data_source_id
+    conn.default_data_source_id = payload.database_id
     conn.default_database_title = payload.title
 
     db.commit()

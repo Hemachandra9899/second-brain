@@ -55,6 +55,10 @@ def _notion_error(prefix: str, response: requests.Response) -> RuntimeError:
 
 
 def search_notion_databases(access_token: str) -> list[dict]:
+    """
+    Notion 2026-03-11 returns data_sources, not legacy databases.
+    UI can still call these "databases" for user clarity.
+    """
     headers = _build_notion_headers(access_token)
 
     response = requests.post(
@@ -63,7 +67,11 @@ def search_notion_databases(access_token: str) -> list[dict]:
         json={
             "filter": {
                 "property": "object",
-                "value": "database",
+                "value": "data_source",
+            },
+            "sort": {
+                "direction": "descending",
+                "timestamp": "last_edited_time",
             },
             "page_size": 50,
         },
@@ -71,23 +79,26 @@ def search_notion_databases(access_token: str) -> list[dict]:
     )
 
     if response.status_code >= 400:
-        raise _notion_error("Notion database search failed", response)
+        raise _notion_error("Notion data source search failed", response)
 
     results = response.json().get("results", [])
 
     normalized = []
-    for db in results:
-        title_items = db.get("title") or []
+
+    for item in results:
+        title_items = item.get("title") or []
         title = "Untitled"
+
         if title_items:
             title = title_items[0].get("plain_text") or "Untitled"
 
         normalized.append(
             {
-                "id": db.get("id"),
+                "id": item.get("id"),
                 "title": title,
-                "url": db.get("url"),
-                "object": db.get("object"),
+                "url": item.get("url"),
+                "object": item.get("object"),
+                "data_source_id": item.get("id"),
             }
         )
 
