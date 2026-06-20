@@ -67,6 +67,9 @@ def run_chat(
             "graph_context": answer.get("graph_context", []),
         }
 
+    if intent["intent"] == "complete_task_request":
+        return _handle_complete_task_request(db, message, intent, current_user)
+
     user_id = current_user.id if current_user else None
 
     mood_data = None
@@ -444,3 +447,65 @@ def _handle_capture_note(
             "answer": "I captured your note but could not index it into memory.",
             "intent": intent,
         }
+
+
+def _handle_complete_task_request(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {
+            "answer": "Please sign in first so I can update your tasks.",
+            "intent": intent,
+        }
+
+    query = (
+        message.lower()
+        .replace("completed", "")
+        .replace("complete", "")
+        .replace("finished", "")
+        .replace("done", "")
+        .replace("mark", "")
+        .replace("task", "")
+        .strip()
+    )
+
+    task_query = (
+        db.query(Task)
+        .filter(Task.user_id == current_user.id)
+        .filter(Task.status != "Done")
+        .order_by(Task.created_at.desc())
+    )
+
+    if query:
+        like = f"%{query}%"
+        task_query = task_query.filter(
+            (Task.title.ilike(like)) | (Task.description.ilike(like))
+        )
+
+    tasks = task_query.limit(5).all()
+
+    if not tasks:
+        return {
+            "answer": "I could not find an open matching task. Try opening Tasks and marking it done manually.",
+            "intent": intent,
+            "task_choices": [],
+        }
+
+    return {
+        "answer": "Which task should I mark as done?",
+        "intent": intent,
+        "task_choices": [
+            {
+                "id": task.id,
+                "title": task.title,
+                "status": task.status,
+                "priority": task.priority,
+                "due_date": task.due_date,
+                "notion_page_id": task.notion_page_id,
+            }
+            for task in tasks
+        ],
+    }

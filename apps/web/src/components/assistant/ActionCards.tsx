@@ -69,9 +69,27 @@ export function TaskResultCard({ task }: { task: CreatedTaskCardData }) {
 export function SourceCards({
   sources,
 }: {
-  sources?: { title: string; url?: string; type: string }[];
+  sources?: {
+    title: string;
+    url?: string | null;
+    id?: string | null;
+    type: string;
+    preview?: string | null;
+  }[];
 }) {
   if (!sources?.length) return null;
+
+  function hrefFor(source: {
+    url?: string | null;
+    id?: string | null;
+    type: string;
+  }) {
+    if (source.url) return source.url;
+    if (source.type === "writing" && source.id) return `/writing/${source.id}`;
+    if (source.type === "task" && source.id) return `/tasks`;
+    if (source.type === "memory" && source.id) return `/memory`;
+    return "#";
+  }
 
   return (
     <div className="mt-3 space-y-2">
@@ -79,24 +97,47 @@ export function SourceCards({
         Sources used
       </p>
 
-      {sources.map((source, index) => (
-        <a
-          key={`${source.title}-${index}`}
-          href={source.url || "#"}
-          target={source.url ? "_blank" : undefined}
-          rel={source.url ? "noreferrer" : undefined}
-          className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm shadow-sm ring-1 ring-slate-200"
-        >
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-slate-950">
-              {source.title}
-            </p>
-            <p className="text-xs capitalize text-slate-500">{source.type}</p>
-          </div>
+      {sources.map((source, index) => {
+        const href = hrefFor(source);
+        const external = href.startsWith("http");
 
-          <span className="text-sky-600">›</span>
-        </a>
-      ))}
+        const card = (
+          <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm shadow-sm ring-1 ring-slate-200">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-slate-950">
+                {source.title}
+              </p>
+
+              <p className="mt-0.5 text-xs capitalize text-slate-500">
+                {source.type}
+              </p>
+
+              {source.preview ? (
+                <p className="mt-1 line-clamp-1 text-xs text-slate-400">
+                  {source.preview}
+                </p>
+              ) : null}
+            </div>
+
+            <span className="ml-3 text-xl text-sky-600">›</span>
+          </div>
+        );
+
+        if (href === "#") {
+          return <div key={`${source.title}-${index}`}>{card}</div>;
+        }
+
+        return (
+          <a
+            key={`${source.title}-${index}`}
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noreferrer" : undefined}
+          >
+            {card}
+          </a>
+        );
+      })}
     </div>
   );
 }

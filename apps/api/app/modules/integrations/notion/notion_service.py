@@ -692,3 +692,177 @@ def create_notion_page_from_blocks(
         )
 
     return response.json()
+
+
+def retrieve_notion_page(access_token: str, page_id: str) -> dict:
+    headers = _build_notion_headers(access_token)
+
+    response = requests.get(
+        f"https://api.notion.com/v1/pages/{page_id}",
+        headers=headers,
+        timeout=30,
+    )
+
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Notion retrieve page failed: {response.status_code} {response.text}"
+        )
+
+    return response.json()
+
+
+def update_notion_page_status_if_exists(
+    access_token: str,
+    page_id: str,
+    done_status: str = "Done",
+) -> bool:
+    page = retrieve_notion_page(access_token, page_id)
+    properties = page.get("properties") or {}
+
+    status_property_name = None
+    status_property_type = None
+
+    for name, prop in properties.items():
+        prop_type = prop.get("type")
+        if name.lower() == "status" and prop_type in ("status", "select"):
+            status_property_name = name
+            status_property_type = prop_type
+            break
+
+    if not status_property_name:
+        return False
+
+    if status_property_type == "status":
+        payload = {
+            "properties": {
+                status_property_name: {
+                    "status": {
+                        "name": done_status,
+                    }
+                }
+            }
+        }
+    else:
+        payload = {
+            "properties": {
+                status_property_name: {
+                    "select": {
+                        "name": done_status,
+                    }
+                }
+            }
+        }
+
+    headers = _build_notion_headers(access_token)
+
+    response = requests.patch(
+        f"https://api.notion.com/v1/pages/{page_id}",
+        headers=headers,
+        json=payload,
+        timeout=30,
+    )
+
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Notion update page status failed: {response.status_code} {response.text}"
+        )
+
+    return True
+
+
+def _rich_text_to_plain(rich_text: list[dict]) -> str:
+    return "".join([item.get("plain_text", "") for item in rich_text or []]).strip()
+
+
+def update_matching_todo_block_in_page(
+    access_token: str,
+    page_id: str,
+    task_title: str,
+    checked: bool = True,
+) -> bool:
+    headers = _build_notion_headers(access_token)
+
+    response = requests.get(
+        f"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100",
+        headers=headers,
+        timeout=30,
+    )
+
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Notion retrieve page blocks failed: {response.status_code} {response.text}"
+        )
+
+    blocks = response.json().get("results", [])
+    normalized_title = task_title.lower().strip()
+
+    best_block = None
+
+    for block in blocks:
+        if block.get("type") != "to_do":
+            continue
+
+        todo = block.get("to_do") or {}
+        block_text = _rich_text_to_plain(todo.get("rich_text") or [])
+        normalized_block_text = block_text.lower().strip()
+
+        if not normalized_block_text:
+            continue
+
+        if (
+            normalized_title in normalized_block_text
+            or normalized_block_text in normalized_title
+        ):
+            best_block = block
+            break
+
+    if not best_block:
+        return False
+
+    block_id = best_block["id"]
+
+    response = requests.patch(
+        f"https://api.notion.com/v1/blocks/{block_id}",
+        headers=headers,
+        json={
+            "to_do": {
+                "checked": checked,
+            }
+        },
+        timeout=30,
+    )
+
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"Notion update todo block failed: {response.status_code} {response.text}"
+        )
+
+    return True
+
+
+def mark_notion_task_done(
+    access_token: str,
+    page_id: str,
+    task_title: str,
+) -> dict:
+    status_updated = update_notion_page_status_if_exists(
+        access_token=access_token,
+        page_id=page_id,
+        done_status="Done",
+    )
+
+    todo_block_updated = update_matching_todo_block_in_page(
+        access_token=access_token,
+        page_id=page_id,
+        task_title=task_title,
+        checked=True,
+    )
+
+    page = retrieve_notion_page(access_token, page_id)
+
+    return {
+        "page_id": page_id,
+        "page_url": page.get("url"),
+        "status_updated": status_updated,
+        "todo_block_updated": todo_block_updated,
+    }

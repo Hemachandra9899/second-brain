@@ -82,6 +82,17 @@ def _rule_based_intent(message: str) -> dict | None:
             "needs_graphrag": True,
         }
 
+    if re.search(r"\b(done|completed|complete|finished|mark.*done)\b", text):
+        return {
+            "intent": "complete_task_request",
+            "title": text,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
     if text.startswith("/"):
         return {
             "intent": "general_chat",
@@ -151,7 +162,7 @@ Classify this Second Brain chat message.
 
 Return strict JSON only:
 {{
-  "intent": "greeting|create_task|create_notion_task|query_today_tasks|query_notion_tasks|capture_note|knowledge_question|general_chat",
+  "intent": "greeting|create_task|create_notion_task|query_today_tasks|query_notion_tasks|complete_task_request|capture_note|knowledge_question|general_chat",
   "title": "short title or null",
   "description": "description or null",
   "priority": "Low|Normal|High",

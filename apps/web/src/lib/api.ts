@@ -135,6 +135,10 @@ export async function syncTaskToNotion(id: string) {
   return apiPost<Task>(`/tasks/${id}/sync/notion`, {});
 }
 
+export async function completeTask(taskId: string) {
+  return apiPost<CompleteTaskResponse>(`/tasks/${taskId}/complete`, {});
+}
+
 export type NotionPageCardData = {
   id: string;
   title: string;
@@ -149,6 +153,28 @@ export type CreatedTaskCardData = {
   due_date?: string | null;
 };
 
+export type TaskChoice = {
+  id: string;
+  title: string;
+  status?: string | null;
+  priority?: string | null;
+  due_date?: string | null;
+  notion_page_id?: string | null;
+};
+
+export type CompleteTaskResponse = {
+  ok: boolean;
+  task: Task;
+  notion_updated: boolean;
+  notion_result?: {
+    page_id?: string;
+    page_url?: string;
+    status_updated?: boolean;
+    todo_block_updated?: boolean;
+  } | null;
+  notion_error?: string | null;
+};
+
 export type AssistantResponse = {
   answer: string;
   mood?: unknown;
@@ -157,6 +183,7 @@ export type AssistantResponse = {
   notion_page_id?: string;
   notion_page?: NotionPageCardData | null;
   created_task?: CreatedTaskCardData | null;
+  task_choices?: TaskChoice[];
   sources?: {
     title: string;
     url?: string;
@@ -468,6 +495,26 @@ export type ActivityEvent = {
 
 export async function getRecentActivity() {
   return apiGet<ActivityEvent[]>("/activity/recent");
+}
+
+export type BrainSource = {
+  title: string;
+  type: "notion" | "memory" | "task" | "writing" | "knowledge" | string;
+  id?: string | null;
+  url?: string | null;
+  preview?: string | null;
+};
+
+export type BrainAskResponse = {
+  answer: string;
+  sources: BrainSource[];
+};
+
+export async function askBrain(query: string, source_hint?: string) {
+  return apiPost<BrainAskResponse>("/brain/ask", {
+    query,
+    source_hint,
+  });
 }
 
 export async function syncWritingToNotion(documentId: string) {

@@ -12,6 +12,7 @@ from app.modules.tasks.task_service import (
     update_task,
     delete_task,
     sync_task_to_notion,
+    complete_task_and_sync_to_notion,
 )
 
 router = APIRouter()
@@ -94,4 +95,17 @@ def delete_task_endpoint(
         db=db,
         task_id=task_id,
         user_id=current_user.id if current_user else None,
+    )
+
+
+@router.post("/{task_id}/complete")
+def complete_task_endpoint(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user),
+):
+    return complete_task_and_sync_to_notion(
+        db=db,
+        task_id=task_id,
+        current_user=current_user,
     )

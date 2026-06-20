@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { askAssistant } from "@/lib/api";
+import { askAssistant, askBrain } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
 import {
@@ -17,9 +17,11 @@ import {
   SourceCards,
   TaskResultCard,
 } from "@/components/assistant/ActionCards";
+import { TaskChoiceCards } from "@/components/assistant/TaskChoiceCards";
 import type {
   CreatedTaskCardData,
   NotionPageCardData,
+  TaskChoice,
 } from "@/lib/api";
 
 type Message = {
@@ -27,10 +29,13 @@ type Message = {
   content: string;
   notion_page?: NotionPageCardData | null;
   created_task?: CreatedTaskCardData | null;
+  task_choices?: TaskChoice[];
   sources?: {
     title: string;
-    url?: string;
-    type: "notion" | "memory" | "task" | "writing";
+    url?: string | null;
+    id?: string | null;
+    type: string;
+    preview?: string | null;
   }[];
 };
 
@@ -80,6 +85,38 @@ export function AssistantScreen() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, loading]);
 
+  function shouldUseBrainAsk(message: string) {
+    const text = message.trim().toLowerCase();
+    return (
+      text.includes("@memory") ||
+      text.includes("@notion") ||
+      text.includes("@tasks") ||
+      text.includes("@writing") ||
+      text.startsWith("/memory") ||
+      text.startsWith("/today") ||
+      text.startsWith("/write")
+    );
+  }
+
+  function inferSourceHint(message: string) {
+    const text = message.trim().toLowerCase();
+    if (text.includes("@notion") || text.startsWith("/notion")) return "notion";
+    if (text.includes("@tasks") || text.startsWith("/today")) return "tasks";
+    if (text.includes("@writing") || text.startsWith("/write")) return "writing";
+    if (text.includes("@memory") || text.startsWith("/memory")) return "memory";
+    return "all";
+  }
+
+  function addAssistantMessage(content: string) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content,
+      },
+    ]);
+  }
+
   async function sendMessage(text?: string) {
     const content = (text || input).trim();
     if (!content || loading) return;
@@ -89,15 +126,18 @@ export function AssistantScreen() {
     setMessages((prev) => [...prev, { role: "user", content }]);
 
     try {
-      const res = await askAssistant(content);
+      const res = shouldUseBrainAsk(content)
+        ? await askBrain(content, inferSourceHint(content))
+        : await askAssistant(content);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content: res.answer || "I could not generate a response.",
-          notion_page: res.notion_page || null,
-          created_task: res.created_task || null,
+          notion_page: "notion_page" in res ? res.notion_page || null : null,
+          created_task: "created_task" in res ? res.created_task || null : null,
+          task_choices: res.task_choices || [],
           sources: res.sources || [],
         },
       ]);
@@ -243,6 +283,13 @@ export function AssistantScreen() {
                   <div className="mr-auto max-w-[88%]">
                     {message.created_task ? (
                       <TaskResultCard task={message.created_task} />
+                    ) : null}
+
+                    {message.task_choices?.length ? (
+                      <TaskChoiceCards
+                        tasks={message.task_choices}
+                        onCompleted={addAssistantMessage}
+                      />
                     ) : null}
 
                     {message.notion_page ? (

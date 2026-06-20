@@ -2,10 +2,14 @@ from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models import Task
+from app.models import Task, User
 from app.modules.tasks.task_schema import CreateTaskRequest, UpdateTaskRequest
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge, delete_task_from_knowledge
-from app.modules.integrations.notion.notion_oauth_service import get_notion_token
+from app.modules.integrations.notion.notion_oauth_service import (
+    get_notion_token,
+    get_notion_connection,
+    get_decrypted_token,
+)
 
 
 def serialize_task(task: Task) -> dict:
@@ -220,6 +224,72 @@ def sync_task_to_notion(
                 db.refresh(task)
 
     return serialize_task(task)
+
+
+def complete_task_and_sync_to_notion(
+    db: Session,
+    task_id: str,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task.status = "Done"
+    db.commit()
+    db.refresh(task)
+
+    notion_result = None
+    notion_error = None
+
+    if task.notion_page_id:
+        try:
+            conn = get_notion_connection(db, current_user)
+
+            if conn:
+                access_token = get_decrypted_token(conn)
+
+                from app.modules.integrations.notion.notion_service import (
+                    mark_notion_task_done,
+                )
+
+                notion_result = mark_notion_task_done(
+                    access_token=access_token,
+                    page_id=task.notion_page_id,
+                    task_title=task.title,
+                )
+            else:
+                notion_error = "Notion is not connected"
+
+        except Exception as exc:
+            notion_error = str(exc)
+
+    try:
+        index_task_as_knowledge(db=db, task=task)
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "task": serialize_task(task),
+        "notion_updated": bool(
+            notion_result
+            and (
+                notion_result.get("status_updated")
+                or notion_result.get("todo_block_updated")
+            )
+        ),
+        "notion_result": notion_result,
+        "notion_error": notion_error,
+    }
 
 
 def delete_task(
