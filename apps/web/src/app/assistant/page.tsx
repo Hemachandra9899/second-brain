@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { PillChip } from "@/components/PillChip";
 import { AssistantInputBar } from "@/components/AssistantInputBar";
 import { askAssistant } from "@/lib/api";
+import { useMoodTheme } from "@/hooks/useMoodTheme";
 
 type Message = {
   role: "user" | "assistant";
@@ -13,6 +14,7 @@ type Message = {
 };
 
 export default function AssistantPage() {
+  const { setMood } = useMoodTheme();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -26,6 +28,9 @@ export default function AssistantPage() {
     try {
       const res = await askAssistant(message);
       setMessages((prev) => [...prev, { role: "assistant", content: res.answer }]);
+      if (res.mood) {
+        setMood(message);
+      }
     } catch {
       setMessages((prev) => [
         ...prev,

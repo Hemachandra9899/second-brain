@@ -1,18 +1,42 @@
 import httpx
-
 from app.core.config import settings
 
 
-def send_message(to: str, text: str) -> dict:
-    with httpx.Client(base_url=settings.openwa_base_url) as client:
-        response = client.post(
-            "/api/sendText",
-            json={
-                "chatId": to,
-                "text": text,
-                "session": "default",
-            },
-            headers={"Authorization": f"Bearer {settings.openwa_api_key}"},
+def _headers():
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    if settings.openwa_api_key:
+        headers["Authorization"] = f"Bearer {settings.openwa_api_key}"
+        headers["x-api-key"] = settings.openwa_api_key
+
+    return headers
+
+
+async def send_whatsapp_text(
+    session_id: str,
+    to: str,
+    text: str,
+):
+    if not settings.openwa_base_url:
+        return {
+            "ok": False,
+            "error": "OpenWA not configured",
+        }
+
+    url = f"{settings.openwa_base_url}/api/sessions/{session_id}/messages/send-text"
+
+    payload = {
+        "to": to,
+        "text": text,
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            url,
+            json=payload,
+            headers=_headers(),
         )
         response.raise_for_status()
         return response.json()

@@ -9,6 +9,7 @@ import {
   deleteKnowledgeItem,
   getKnowledgeItems,
   KnowledgeItem,
+  KnowledgeAnswerResponse,
 } from "@/lib/api";
 
 export default function KnowledgePage() {
@@ -16,9 +17,7 @@ export default function KnowledgePage() {
   const [title, setTitle] = useState("");
   const [rawText, setRawText] = useState("");
   const [query, setQuery] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [sources, setSources] = useState<any[]>([]);
-  const [graphContext, setGraphContext] = useState<any[]>([]);
+  const [result, setResult] = useState<KnowledgeAnswerResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function loadItems() {
@@ -60,9 +59,7 @@ export default function KnowledgePage() {
 
     try {
       const res = await askKnowledge(query);
-      setAnswer(res.answer);
-      setSources(res.sources || []);
-      setGraphContext(res.graph_context || []);
+      setResult(res);
     } finally {
       setLoading(false);
     }
@@ -120,24 +117,90 @@ export default function KnowledgePage() {
         </GlassCard>
       </div>
 
-      {answer ? (
-        <GlassCard className="mt-6">
-          <h2 className="mb-3 text-xl font-semibold">Answer</h2>
-          <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{answer}</p>
-        </GlassCard>
-      ) : null}
+      {result ? (
+        <div className="mt-6 space-y-4">
+          <GlassCard>
+            <h2 className="mb-3 text-xl font-semibold">Answer</h2>
+            <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{result.answer}</p>
+          </GlassCard>
 
-      {graphContext.length ? (
-        <GlassCard className="mt-6">
-          <h2 className="mb-3 text-xl font-semibold">Graph context</h2>
-          <div className="space-y-2">
-            {graphContext.map((rel, idx) => (
-              <p key={idx} className="text-sm text-slate-600">
-                {rel.from} <span className="text-sky-600">--{rel.type}--</span> {rel.to}
+          {result.suggested_next_action ? (
+            <GlassCard>
+              <p className="text-sm font-medium text-sky-700">
+                Next: {result.suggested_next_action}
               </p>
-            ))}
-          </div>
-        </GlassCard>
+            </GlassCard>
+          ) : null}
+
+          {result.sources?.length ? (
+            <GlassCard>
+              <h2 className="mb-3 text-xl font-semibold">Sources</h2>
+              <div className="space-y-2">
+                {result.sources.map((s, idx) => (
+                  <div key={idx} className="rounded-xl bg-white/70 p-3 text-sm">
+                    <p className="font-medium">{s.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">Score: {s.score?.toFixed(3)}</p>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          ) : null}
+
+          {result.related_tasks?.length ? (
+            <GlassCard>
+              <h2 className="mb-3 text-xl font-semibold">Related Tasks</h2>
+              <div className="space-y-2">
+                {result.related_tasks.map((t) => (
+                  <div key={t.id} className="rounded-xl bg-white/70 p-3 text-sm">
+                    <p className="font-medium">{t.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{t.status} · {t.priority}</p>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          ) : null}
+
+          {result.related_notes?.length ? (
+            <GlassCard>
+              <h2 className="mb-3 text-xl font-semibold">Related Notes</h2>
+              <div className="space-y-2">
+                {result.related_notes.map((n) => (
+                  <div key={n.id} className="rounded-xl bg-white/70 p-3 text-sm">
+                    <p className="font-medium">{n.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{n.source_type}</p>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          ) : null}
+
+          {result.related_memory_cards?.length ? (
+            <GlassCard>
+              <h2 className="mb-3 text-xl font-semibold">Memory Cards</h2>
+              <div className="space-y-2">
+                {result.related_memory_cards.map((mc) => (
+                  <div key={mc.id} className="rounded-xl bg-white/70 p-3 text-sm">
+                    <p className="font-medium">{mc.title}</p>
+                    <p className="mt-1 text-xs text-slate-500 line-clamp-2">{mc.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          ) : null}
+
+          {result.graph_context?.length ? (
+            <GlassCard>
+              <h2 className="mb-3 text-xl font-semibold">Graph Connections</h2>
+              <div className="space-y-2">
+                {result.graph_context.map((rel, idx) => (
+                  <p key={idx} className="text-sm text-slate-600">
+                    {rel.from} <span className="text-sky-600">--{rel.type}--</span> {rel.to}
+                  </p>
+                ))}
+              </div>
+            </GlassCard>
+          ) : null}
+        </div>
       ) : null}
 
       <section className="mt-6 grid gap-4 md:grid-cols-3">

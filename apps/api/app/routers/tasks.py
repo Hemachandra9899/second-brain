@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db.models import Task
+from app.core.auth import get_current_user, require_current_user
 from app.services.notion_service import create_notion_task, update_notion_task
 from app.services.knowledge_service import index_task_as_knowledge, delete_task_from_knowledge
 
@@ -44,8 +45,16 @@ def serialize_task(task: Task):
 
 
 @router.get("")
-def list_tasks(db: Session = Depends(get_db)):
-    tasks = db.query(Task).order_by(Task.created_at.desc()).all()
+def list_tasks(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query = db.query(Task).order_by(Task.created_at.desc())
+
+    if current_user:
+        query = query.filter(Task.user_id == current_user.id)
+
+    tasks = query.all()
     return [serialize_task(task) for task in tasks]
 
 
@@ -54,8 +63,12 @@ def list_scheduled_tasks(
     from_date: str | None = Query(default=None),
     to_date: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     query = db.query(Task).filter(Task.due_date.isnot(None))
+
+    if current_user:
+        query = query.filter(Task.user_id == current_user.id)
 
     if from_date:
         query = query.filter(Task.due_date >= from_date)
@@ -68,9 +81,14 @@ def list_scheduled_tasks(
 
 
 @router.post("")
-def create_task(payload: CreateTaskRequest, db: Session = Depends(get_db)):
+def create_task(
+    payload: CreateTaskRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     task = Task(
         id=str(uuid4()),
+        user_id=current_user.id if current_user else None,
         title=payload.title,
         description=payload.description,
         status=payload.status,
@@ -107,8 +125,18 @@ def create_task(payload: CreateTaskRequest, db: Session = Depends(get_db)):
 
 
 @router.patch("/{task_id}")
-def update_task(task_id: str, payload: UpdateTaskRequest, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def update_task(
+    task_id: str,
+    payload: UpdateTaskRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query = db.query(Task).filter(Task.id == task_id)
+
+    if current_user:
+        query = query.filter(Task.user_id == current_user.id)
+
+    task = query.first()
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -165,8 +193,17 @@ def update_task(task_id: str, payload: UpdateTaskRequest, db: Session = Depends(
 
 
 @router.post("/{task_id}/sync/notion")
-def sync_task_to_notion(task_id: str, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def sync_task_to_notion(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query = db.query(Task).filter(Task.id == task_id)
+
+    if current_user:
+        query = query.filter(Task.user_id == current_user.id)
+
+    task = query.first()
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -196,8 +233,17 @@ def sync_task_to_notion(task_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{task_id}")
-def delete_task(task_id: str, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def delete_task(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query = db.query(Task).filter(Task.id == task_id)
+
+    if current_user:
+        query = query.filter(Task.user_id == current_user.id)
+
+    task = query.first()
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")

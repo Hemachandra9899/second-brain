@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     env: str = "development"
+    frontend_url: str = "http://localhost:3000"
 
     database_url: str
 
@@ -19,8 +20,13 @@ class Settings(BaseSettings):
     notion_api_key: str | None = None
     notion_tasks_database_id: str | None = None
 
-    openwa_base_url: str = "http://openwa-api:2785"
+    openwa_base_url: str | None = None
     openwa_api_key: str | None = None
+
+    google_client_id: str = ""
+    jwt_secret: str = "change_this_to_long_random_secret"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 10080
 
     class Config:
         env_file = ".env"

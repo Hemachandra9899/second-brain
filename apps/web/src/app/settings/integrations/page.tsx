@@ -18,7 +18,7 @@ export default function IntegrationsPage() {
       <section className="mb-8">
         <h1 className="text-5xl font-semibold tracking-tight">Integrations</h1>
         <p className="mt-3 text-sm text-slate-600">
-          Connect Notion, Pinecone, NVIDIA, and later WhatsApp/OpenWA.
+          Connect Notion, Pinecone, and NVIDIA for your Second Brain.
         </p>
       </section>
 
@@ -51,9 +51,12 @@ export default function IntegrationsPage() {
         </GlassCard>
 
         <GlassCard>
-          <h2 className="text-xl font-semibold">OpenWA</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Later, use WhatsApp as an input channel for tasks and memory capture.
+          <h2 className="text-xl font-semibold text-slate-400">WhatsApp / OpenWA</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            WhatsApp input channel — disabled in public demo.
+          </p>
+          <p className="mt-2 text-xs text-slate-400">
+            Requires self-hosted OpenWA instance.
           </p>
         </GlassCard>
       </div>
