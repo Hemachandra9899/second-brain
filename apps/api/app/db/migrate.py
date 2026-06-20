@@ -177,4 +177,32 @@ def run_migrations():
             """))
             print("Created table: whatsapp_messages")
 
+    if "notion_connections" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS notion_connections (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    encrypted_access_token TEXT NOT NULL,
+                    encrypted_refresh_token TEXT,
+                    bot_id VARCHAR(255),
+                    workspace_id VARCHAR(255),
+                    workspace_name VARCHAR(500),
+                    workspace_icon TEXT,
+                    owner_type VARCHAR(100),
+                    owner_user_id VARCHAR(255),
+                    owner_name VARCHAR(500),
+                    owner_email VARCHAR(500),
+                    owner_avatar_url TEXT,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: notion_connections")
+
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_notion_connections_user_id ON notion_connections(user_id)"
+            ))
+            print("Created index: idx_notion_connections_user_id")
+
     print("Migration complete")

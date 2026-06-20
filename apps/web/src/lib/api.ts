@@ -323,3 +323,24 @@ export type KnowledgeAnswerResponse = {
   graph_context: { from: string; to: string; type: string }[];
   suggested_next_action?: string | null;
 };
+
+export type NotionStatus = {
+  connected: boolean;
+  workspace_name?: string | null;
+  workspace_id?: string | null;
+  workspace_icon?: string | null;
+  owner_name?: string | null;
+  owner_email?: string | null;
+};
+
+export async function getNotionStatus() {
+  return apiGet<NotionStatus>("/integrations/notion/status");
+}
+
+export async function getNotionConnectUrl() {
+  return apiGet<{ auth_url: string }>("/integrations/notion/connect");
+}
+
+export async function disconnectNotion() {
+  return apiDelete<{ ok: boolean }>("/integrations/notion/disconnect");
+}

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.models import Task
 from app.modules.tasks.task_schema import CreateTaskRequest, UpdateTaskRequest
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge, delete_task_from_knowledge
-from app.modules.integrations.notion.notion_service import create_notion_task, update_notion_task
+from app.modules.integrations.notion.notion_oauth_service import get_notion_token
 
 
 def serialize_task(task: Task) -> dict:
@@ -25,7 +25,7 @@ def list_tasks(db: Session, user_id: str | None = None) -> list[dict]:
     query = db.query(Task).order_by(Task.created_at.desc())
 
     if user_id:
-        query = query.filter(Task.user_id == user_id)
+        query = query.filter((Task.user_id == user_id) | (Task.user_id.is_(None)))
 
     tasks = query.all()
     return [serialize_task(task) for task in tasks]
@@ -40,7 +40,7 @@ def list_scheduled_tasks(
     query = db.query(Task).filter(Task.due_date.isnot(None))
 
     if user_id:
-        query = query.filter(Task.user_id == user_id)
+        query = query.filter((Task.user_id == user_id) | (Task.user_id.is_(None)))
 
     if from_date:
         query = query.filter(Task.due_date >= from_date)
@@ -72,18 +72,22 @@ def create_task(
     db.commit()
     db.refresh(task)
 
-    if payload.sync_to_notion:
+    if payload.sync_to_notion and user_id:
         try:
-            page = create_notion_task(
-                title=task.title,
-                description=task.description,
-                status=task.status,
-                due_date=task.due_date,
-                priority=task.priority,
-            )
-            task.notion_page_id = page.get("id")
-            db.commit()
-            db.refresh(task)
+            notion_token = get_notion_token(db, user_id)
+            if notion_token:
+                from app.modules.integrations.notion.notion_service import create_notion_task
+                page = create_notion_task(
+                    access_token=notion_token,
+                    title=task.title,
+                    description=task.description,
+                    status=task.status,
+                    due_date=task.due_date,
+                    priority=task.priority,
+                )
+                task.notion_page_id = page.get("id")
+                db.commit()
+                db.refresh(task)
         except Exception:
             pass
 
@@ -129,28 +133,36 @@ def update_task(
     db.commit()
     db.refresh(task)
 
-    if payload.sync_to_notion:
+    if payload.sync_to_notion and user_id:
         try:
-            if task.notion_page_id:
-                update_notion_task(
-                    page_id=task.notion_page_id,
-                    title=task.title,
-                    description=task.description,
-                    status=task.status,
-                    due_date=task.due_date,
-                    priority=task.priority,
+            notion_token = get_notion_token(db, user_id)
+            if notion_token:
+                from app.modules.integrations.notion.notion_service import (
+                    create_notion_task,
+                    update_notion_task,
                 )
-            else:
-                page = create_notion_task(
-                    title=task.title,
-                    description=task.description,
-                    status=task.status,
-                    due_date=task.due_date,
-                    priority=task.priority,
-                )
-                task.notion_page_id = page.get("id")
-                db.commit()
-                db.refresh(task)
+                if task.notion_page_id:
+                    update_notion_task(
+                        access_token=notion_token,
+                        page_id=task.notion_page_id,
+                        title=task.title,
+                        description=task.description,
+                        status=task.status,
+                        due_date=task.due_date,
+                        priority=task.priority,
+                    )
+                else:
+                    page = create_notion_task(
+                        access_token=notion_token,
+                        title=task.title,
+                        description=task.description,
+                        status=task.status,
+                        due_date=task.due_date,
+                        priority=task.priority,
+                    )
+                    task.notion_page_id = page.get("id")
+                    db.commit()
+                    db.refresh(task)
         except Exception:
             pass
 
@@ -177,26 +189,35 @@ def sync_task_to_notion(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if task.notion_page_id:
-        update_notion_task(
-            page_id=task.notion_page_id,
-            title=task.title,
-            description=task.description,
-            status=task.status,
-            due_date=task.due_date,
-            priority=task.priority,
-        )
-    else:
-        page = create_notion_task(
-            title=task.title,
-            description=task.description,
-            status=task.status,
-            due_date=task.due_date,
-            priority=task.priority,
-        )
-        task.notion_page_id = page.get("id")
-        db.commit()
-        db.refresh(task)
+    if user_id:
+        notion_token = get_notion_token(db, user_id)
+        if notion_token:
+            from app.modules.integrations.notion.notion_service import (
+                create_notion_task,
+                update_notion_task,
+            )
+            if task.notion_page_id:
+                update_notion_task(
+                    access_token=notion_token,
+                    page_id=task.notion_page_id,
+                    title=task.title,
+                    description=task.description,
+                    status=task.status,
+                    due_date=task.due_date,
+                    priority=task.priority,
+                )
+            else:
+                page = create_notion_task(
+                    access_token=notion_token,
+                    title=task.title,
+                    description=task.description,
+                    status=task.status,
+                    due_date=task.due_date,
+                    priority=task.priority,
+                )
+                task.notion_page_id = page.get("id")
+                db.commit()
+                db.refresh(task)
 
     return serialize_task(task)
 
