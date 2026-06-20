@@ -393,3 +393,62 @@ export async function setDefaultNotionDatabase(database_id: string, title?: stri
     title,
   });
 }
+
+export type WritingBlock = {
+  type: "heading" | "paragraph" | "bullet" | "todo" | "quote" | "code";
+  text: string;
+  checked?: boolean;
+};
+
+export type WritingDocument = {
+  id: string;
+  title: string;
+  raw_text: string;
+  cleaned_markdown?: string | null;
+  blocks: WritingBlock[];
+  source_type: string;
+  notion_page_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type WritingCleanResponse = {
+  title: string;
+  cleaned_markdown: string;
+  blocks: WritingBlock[];
+  tasks?: {
+    title: string;
+    description?: string;
+    priority?: string;
+    due_date?: string | null;
+  }[];
+  topics?: string[];
+  projects?: string[];
+  goals?: string[];
+};
+
+export async function cleanWriting(text: string) {
+  return apiPost<WritingCleanResponse>("/writing/clean", { text });
+}
+
+export async function createWritingDocument(input: {
+  title?: string;
+  raw_text: string;
+  cleaned_markdown?: string;
+  blocks?: WritingBlock[];
+  source_type?: string;
+}) {
+  return apiPost<WritingDocument>("/writing/documents", input);
+}
+
+export async function getWritingDocuments() {
+  return apiGet<WritingDocument[]>("/writing/documents");
+}
+
+export async function extractWritingTasks(documentId: string) {
+  return apiPost<{
+    ok: boolean;
+    tasks_created: number;
+    tasks: CreatedTaskCardData[];
+  }>(`/writing/documents/${documentId}/extract`, {});
+}

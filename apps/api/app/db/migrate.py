@@ -218,4 +218,27 @@ def run_migrations():
             ))
             print("Created index: idx_notion_connections_user_id")
 
+    if "writing_documents" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS writing_documents (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    title VARCHAR(500) NOT NULL,
+                    raw_text TEXT NOT NULL,
+                    cleaned_markdown TEXT,
+                    blocks_json TEXT,
+                    source_type VARCHAR(100) DEFAULT 'manual',
+                    notion_page_id VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: writing_documents")
+
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_writing_documents_user_id ON writing_documents(user_id)"
+            ))
+            print("Created index: idx_writing_documents_user_id")
+
     print("Migration complete")

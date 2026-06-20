@@ -6,3 +6,4 @@ from app.models.project import Project, Goal
 from app.models.memory import MemoryCard
 from app.models.whatsapp import WhatsAppMessage
 from app.models.notion import NotionConnection
+from app.models.writing import WritingDocument
