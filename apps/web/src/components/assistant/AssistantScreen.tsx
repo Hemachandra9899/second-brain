@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { askAssistant } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
+import { ChatBubble } from "@/components/assistant/ChatBubble";
+import { CommandTray } from "@/components/assistant/CommandTray";
 
 type Message = {
   role: "user" | "assistant";
@@ -13,21 +15,21 @@ type Message = {
 
 const starterChips = [
   "Plan my day",
-  "Search my memory",
   "Create a task",
-  "Capture an idea",
+  "Search memory",
+  "Connect Notion",
 ];
 
 const quickCards = [
   {
     title: "Today Brief",
-    body: "Summarize my tasks, mood, projects, and what matters next.",
-    prompt: "Give me my Today Brief.",
+    body: "Summarize tasks, mood, projects, and next action.",
+    prompt: "/today Give me my Today Brief.",
   },
   {
-    title: "Search Memory",
-    body: "Ask across tasks, notes, memory cards, and graph context.",
-    prompt: "What do you remember about my current projects?",
+    title: "Notion Task",
+    body: "Create tasks in Notion after connecting workspace.",
+    prompt: "/notion Create a task for today: review my Second Brain demo.",
   },
 ];
 
@@ -39,7 +41,7 @@ export function AssistantScreen() {
     {
       role: "assistant",
       content:
-        "Hey, I am your Second Brain. Ask me anything, capture a thought, or plan your day.",
+        "Hey, I'm your Second Brain. Ask me anything, capture a thought, or plan your day.",
     },
   ]);
 
@@ -80,7 +82,7 @@ export function AssistantScreen() {
         {
           role: "assistant",
           content:
-            "I could not reach the backend yet. Once Render is healthy, I will answer using your Second Brain.",
+            "I could not reach the backend yet. Once Render is healthy, I'll answer using your Second Brain.",
         },
       ]);
     } finally {
@@ -93,15 +95,18 @@ export function AssistantScreen() {
     sendMessage();
   }
 
+  function insertCommand(value: string) {
+    setInput(value);
+  }
+
   return (
     <main className="min-h-[100dvh] bg-sky-50 text-slate-950">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-sky-100 via-blue-50 to-white shadow-2xl">
-        {/* Fixed top bar */}
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/50 bg-sky-50/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl">
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push("/home")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-2xl text-slate-900 shadow-sm active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-slate-900 shadow-sm transition active:scale-95"
               aria-label="Go home"
             >
               ‹
@@ -118,7 +123,7 @@ export function AssistantScreen() {
 
             <button
               onClick={() => setProfileOpen(true)}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/80 text-sm font-semibold text-slate-900 shadow-sm active:scale-95"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/85 text-sm font-semibold text-slate-900 shadow-sm transition active:scale-95"
               aria-label="Open profile"
             >
               {user?.picture ? (
@@ -134,30 +139,24 @@ export function AssistantScreen() {
           </div>
         </header>
 
-        {/* Scrollable chat body */}
         <section className="flex-1 overflow-y-auto px-4 pb-32 pt-24">
           {!hasStarted ? (
-            <div className="pb-5">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[1.35rem] bg-slate-950 text-sm font-bold text-white shadow-xl">
-                SB
-              </div>
-
+            <div className="pb-5 transition-all duration-300">
               <h1 className="mx-auto max-w-xs text-center text-4xl font-semibold leading-[0.98] tracking-[-0.04em] text-slate-950">
                 Ready to organize your second brain?
               </h1>
 
               <p className="mx-auto mt-4 max-w-xs text-center text-sm leading-6 text-slate-600">
-                Ask, capture, plan, or search your personal memory.
+                Ask, capture, plan, search memory, or send commands with /.
               </p>
 
               {!signedIn ? (
-                <div className="mt-5 rounded-[1.75rem] bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="mt-5 rounded-[1.75rem] bg-white/85 p-4 shadow-sm backdrop-blur">
                   <p className="text-sm font-semibold text-slate-900">
                     Sign in to save memory
                   </p>
                   <p className="mt-1 text-xs leading-5 text-slate-600">
-                    Keep tasks, notes, mood, projects, and graph memory private
-                    to you.
+                    Keep tasks, notes, mood, projects, and graph memory private.
                   </p>
                   <Link
                     href="/login"
@@ -173,7 +172,7 @@ export function AssistantScreen() {
                   <button
                     key={chip}
                     onClick={() => sendMessage(chip)}
-                    className="shrink-0 rounded-full bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm active:scale-95"
+                    className="shrink-0 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition active:scale-95"
                   >
                     {chip}
                   </button>
@@ -185,7 +184,7 @@ export function AssistantScreen() {
                   <button
                     key={card.title}
                     onClick={() => sendMessage(card.prompt)}
-                    className="rounded-[1.75rem] bg-white/85 p-4 text-left shadow-sm active:scale-[0.98]"
+                    className="rounded-[1.75rem] bg-white/90 p-4 text-left shadow-sm transition active:scale-[0.98]"
                   >
                     <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-sky-100 via-blue-100 to-white" />
                     <p className="text-lg font-semibold tracking-tight">
@@ -202,21 +201,16 @@ export function AssistantScreen() {
 
           <div className="space-y-3">
             {messages.map((message, index) => (
-              <div
+              <ChatBubble
                 key={index}
-                className={
-                  message.role === "user"
-                    ? "ml-auto max-w-[82%] rounded-[1.35rem] rounded-br-md bg-sky-600 px-4 py-3 text-sm leading-6 text-white shadow-sm"
-                    : "mr-auto max-w-[86%] rounded-[1.35rem] rounded-bl-md bg-white/90 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm"
-                }
-              >
-                {message.content}
-              </div>
+                role={message.role}
+                content={message.content}
+              />
             ))}
 
             {loading ? (
-              <div className="mr-auto max-w-[70%] rounded-[1.35rem] rounded-bl-md bg-white/90 px-4 py-3 text-sm text-slate-500 shadow-sm">
-                Thinking...
+              <div className="mr-auto max-w-[70%] rounded-[1.35rem] rounded-bl-md bg-white/95 px-4 py-3 text-sm text-slate-500 shadow-sm">
+                Thinking…
               </div>
             ) : null}
 
@@ -224,12 +218,13 @@ export function AssistantScreen() {
           </div>
         </section>
 
-        {/* Fixed bottom chat input */}
         <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
+          <CommandTray input={input} onSelect={insertCommand} />
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setActionsOpen(true)}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-slate-950 shadow-lg active:scale-95"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-slate-950 shadow-lg transition active:scale-95"
               aria-label="Open actions"
             >
               +
@@ -242,7 +237,7 @@ export function AssistantScreen() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask, capture, or plan anything..."
+                placeholder="Ask, /command, or @mention..."
                 className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
               />
 
@@ -287,8 +282,8 @@ function ActionsSheet({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto mt-auto max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/25 p-4 backdrop-blur-sm">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom-4 duration-200">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-lg font-semibold">Actions</p>
           <button
@@ -326,8 +321,8 @@ function ProfileSheet({
   user: { name?: string; email?: string; picture?: string } | null;
 }) {
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto mt-auto max-w-md rounded-[2rem] bg-white p-5 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/25 p-4 backdrop-blur-sm">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom-4 duration-200">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-lg font-semibold">Profile</p>
           <button
@@ -349,7 +344,7 @@ function ProfileSheet({
                 />
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
-                  SB
+                  U
                 </div>
               )}
 

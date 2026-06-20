@@ -5,6 +5,8 @@ import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { TodayBriefCard } from "@/components/TodayBriefCard";
 import { getMemoryCards, getProjects, MemoryCard, Project, captureAnything } from "@/lib/api";
+import { RecentActivityCarousel } from "@/components/home/RecentActivityCarousel";
+import { DataImportCard } from "@/components/home/DataImportCard";
 import Link from "next/link";
 
 export function HomeDashboard() {
@@ -40,7 +42,13 @@ export function HomeDashboard() {
         </p>
       </section>
 
-      <GlassCard className="mb-6">
+      <RecentActivityCarousel />
+
+      <div className="mt-5">
+        <DataImportCard />
+      </div>
+
+      <GlassCard className="mt-5 mb-6">
         <div className="flex gap-3">
           <input
             value={captureText}

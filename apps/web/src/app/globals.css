@@ -27,3 +27,30 @@ input,
 textarea {
   font: inherit;
 }
+
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.slide-in-from-bottom-4 {
+  animation-name: slide-in-from-bottom;
+}
+
+.slide-in-from-bottom-2 {
+  animation-name: slide-in-from-bottom;
+}
+
+.duration-200 {
+  animation-duration: 200ms;
+}
