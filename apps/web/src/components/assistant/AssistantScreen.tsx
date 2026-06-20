@@ -7,6 +7,7 @@ import { askAssistant } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
 import { CommandTray } from "@/components/assistant/CommandTray";
+import { TypingBubble } from "@/components/assistant/TypingBubble";
 
 type Message = {
   role: "user" | "assistant";
@@ -96,7 +97,19 @@ export function AssistantScreen() {
   }
 
   function insertCommand(value: string) {
-    setInput(value);
+    setInput((prev) => {
+      if (!prev.trim()) return value;
+
+      if (prev.includes("@")) {
+        return prev.replace(/@\w*$/, value).trimEnd() + " ";
+      }
+
+      if (prev.trim().startsWith("/")) {
+        return value;
+      }
+
+      return `${prev.trimEnd()} ${value}`;
+    });
   }
 
   return (
@@ -209,9 +222,7 @@ export function AssistantScreen() {
             ))}
 
             {loading ? (
-              <div className="mr-auto max-w-[70%] rounded-[1.35rem] rounded-bl-md bg-white/95 px-4 py-3 text-sm text-slate-500 shadow-sm">
-                Thinking…
-              </div>
+              <TypingBubble />
             ) : null}
 
             <div ref={bottomRef} />

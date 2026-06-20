@@ -1,5 +1,5 @@
 import json
-from openai import OpenAI, APIError, AuthenticationError, RateLimitError
+from openai import OpenAI, APIError, AuthenticationError, BadRequestError, RateLimitError
 
 from app.core.config import settings
 
@@ -10,52 +10,58 @@ client = OpenAI(
 )
 
 
-def _create_completion(
+FAST_MODEL_FALLBACKS = [
+    "deepseek-ai/deepseek-v4-flash",
+    "stepfun-ai/step-3.7-flash",
+    "meta/llama-3.1-70b-instruct",
+]
+
+DEEP_MODEL_FALLBACKS = [
+    "stepfun-ai/step-3.7-flash",
+    "deepseek-ai/deepseek-v4-flash",
+    "meta/llama-3.1-70b-instruct",
+]
+
+
+def _try_completion(
+    *,
     prompt: str,
     system: str,
-    model: str,
+    models: list[str],
     temperature: float = 0.2,
-    max_tokens: int = 900,
+    max_tokens: int = 800,
     extra_body: dict | None = None,
 ) -> str:
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-            extra_body=extra_body or {},
-        )
-        return response.choices[0].message.content or ""
+    last_error = None
 
-    except AuthenticationError:
-        return "AI provider authentication failed. Please check NVIDIA_API_KEY."
+    for model in models:
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temperature,
+                top_p=0.95,
+                max_tokens=max_tokens,
+                extra_body=extra_body or {},
+            )
 
-    except RateLimitError:
-        return "The AI provider is rate-limited right now. Please try again shortly."
+            return response.choices[0].message.content or ""
 
-    except APIError:
-        return "The AI provider is temporarily unavailable. Please try again."
+        except AuthenticationError:
+            return "AI provider authentication failed. Please check NVIDIA_API_KEY."
 
-    except Exception:
-        return "Something went wrong while calling the AI provider."
+        except (BadRequestError, APIError, RateLimitError) as exc:
+            last_error = exc
+            continue
 
+        except Exception as exc:
+            last_error = exc
+            continue
 
-def ask_llm(
-    prompt: str,
-    system: str = "You are a helpful second-brain assistant.",
-    max_tokens: int = 900,
-) -> str:
-    return _create_completion(
-        prompt=prompt,
-        system=system,
-        model=settings.nvidia_llm_model,
-        temperature=0.2,
-        max_tokens=max_tokens,
-    )
+    return f"AI provider is unavailable right now. Last error: {type(last_error).__name__}"
 
 
 def ask_fast(
@@ -63,10 +69,10 @@ def ask_fast(
     system: str = "You are a fast helpful assistant.",
     max_tokens: int = 700,
 ) -> str:
-    return _create_completion(
+    return _try_completion(
         prompt=prompt,
         system=system,
-        model=getattr(settings, "nvidia_fast_model", settings.nvidia_llm_model),
+        models=FAST_MODEL_FALLBACKS,
         temperature=0.2,
         max_tokens=max_tokens,
     )
@@ -81,18 +87,34 @@ def ask_json_fast(prompt: str, system: str, fallback: dict) -> dict:
 
     try:
         return json.loads(raw)
-    except json.JSONDecodeError:
-        pass
-
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start >= 0 and end >= 0:
-        try:
-            return json.loads(raw[start:end + 1])
-        except json.JSONDecodeError:
-            pass
+    except Exception:
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start >= 0 and end >= 0:
+            try:
+                return json.loads(raw[start:end + 1])
+            except Exception:
+                pass
 
     return fallback
+
+
+def ask_llm(
+    prompt: str,
+    system: str = "You are a helpful second-brain assistant.",
+    max_tokens: int = 900,
+) -> str:
+    return _try_completion(
+        prompt=prompt,
+        system=system,
+        models=[
+            settings.nvidia_llm_model,
+            "stepfun-ai/step-3.7-flash",
+            "deepseek-ai/deepseek-v4-flash",
+        ],
+        temperature=0.2,
+        max_tokens=max_tokens,
+    )
 
 
 def ask_deep(
@@ -100,11 +122,11 @@ def ask_deep(
     system: str = "You are a careful reasoning assistant.",
     max_tokens: int = 2000,
 ) -> str:
-    return _create_completion(
+    return _try_completion(
         prompt=prompt,
         system=system,
-        model=getattr(settings, "nvidia_deep_model", settings.nvidia_llm_model),
-        temperature=0.3,
+        models=DEEP_MODEL_FALLBACKS,
+        temperature=0.4,
         max_tokens=max_tokens,
         extra_body={
             "chat_template_kwargs": {
