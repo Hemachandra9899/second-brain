@@ -91,6 +91,7 @@ export type Task = {
   priority?: string | null;
   due_date?: string | null;
   source?: string | null;
+  created_at?: string | null;
 };
 
 export async function getTasks() {
