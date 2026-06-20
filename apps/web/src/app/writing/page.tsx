@@ -6,8 +6,10 @@ import {
   cleanWriting,
   createWritingDocument,
   extractWritingTasks,
+  syncWritingToNotion,
   type WritingBlock,
   type WritingDocument,
+  type NotionPageCardData,
 } from "@/lib/api";
 
 function BlocksPreview({ blocks }: { blocks: WritingBlock[] }) {
@@ -68,6 +70,7 @@ export default function WritingPage() {
   const [blocks, setBlocks] = useState<WritingBlock[]>([]);
   const [cleanedMarkdown, setCleanedMarkdown] = useState("");
   const [savedDoc, setSavedDoc] = useState<WritingDocument | null>(null);
+  const [notionPage, setNotionPage] = useState<NotionPageCardData | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -127,6 +130,25 @@ export default function WritingPage() {
       setNotice(`Created ${res.tasks_created} task(s).`);
     } catch {
       setNotice("Could not extract tasks yet.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSyncNotion() {
+    if (!savedDoc) {
+      setNotice("Save the writing block first, then sync to Notion.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await syncWritingToNotion(savedDoc.id);
+      setNotionPage(res.notion_page);
+      setNotice("Synced to Notion.");
+    } catch {
+      setNotice("Could not sync to Notion yet.");
     } finally {
       setLoading(false);
     }
@@ -194,14 +216,38 @@ export default function WritingPage() {
           </button>
 
           <button
-            disabled
-            className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-400 shadow-sm ring-1 ring-slate-200"
+            onClick={handleSyncNotion}
+            disabled={loading || !savedDoc}
+            className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-950 shadow-sm ring-1 ring-slate-200 disabled:opacity-40"
           >
             Notion
           </button>
         </section>
 
         <BlocksPreview blocks={blocks} />
+
+        {notionPage ? (
+          <div className="mt-4 overflow-hidden rounded-[1.6rem] bg-white shadow-sm ring-1 ring-slate-200">
+            <div className="bg-gradient-to-br from-sky-100 to-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
+                Synced to Notion
+              </p>
+              <h3 className="mt-2 text-xl font-semibold leading-tight tracking-tight text-slate-950">
+                {notionPage.title}
+              </h3>
+            </div>
+            <div className="p-3">
+              <a
+                href={notionPage.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white active:scale-[0.98]"
+              >
+                Open in Notion →
+              </a>
+            </div>
+          </div>
+        ) : null}
       </div>
     </main>
   );

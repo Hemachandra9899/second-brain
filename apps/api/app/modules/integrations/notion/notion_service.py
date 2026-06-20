@@ -522,3 +522,95 @@ def pull_notion_tasks(access_token: str, database_id: str):
         )
 
     return response.json().get("results", [])
+
+
+def _writing_block_to_notion(block: dict) -> dict:
+    block_type = block.get("type", "paragraph")
+    text = block.get("text", "")
+
+    rich_text = [
+        {
+            "type": "text",
+            "text": {"content": text[:1800]},
+        }
+    ]
+
+    mapping = {
+        "heading": {
+            "type": "heading_2",
+            "heading_2": {"rich_text": rich_text},
+        },
+        "todo": {
+            "type": "to_do",
+            "to_do": {
+                "rich_text": rich_text,
+                "checked": bool(block.get("checked", False)),
+            },
+        },
+        "bullet": {
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {"rich_text": rich_text},
+        },
+        "quote": {
+            "type": "quote",
+            "quote": {"rich_text": rich_text},
+        },
+        "code": {
+            "type": "code",
+            "code": {"rich_text": rich_text},
+        },
+    }
+
+    entry = mapping.get(block_type)
+    if entry:
+        return {"object": "block", **entry}
+
+    return {
+        "object": "block",
+        "type": "paragraph",
+        "paragraph": {"rich_text": rich_text},
+    }
+
+
+def create_notion_page_from_blocks(
+    access_token: str,
+    title: str,
+    blocks: list[dict],
+    data_source_id: str,
+) -> dict:
+    headers = _build_notion_headers(access_token)
+
+    schema = retrieve_data_source(access_token, data_source_id)
+    title_prop_name = find_title_property(schema)
+
+    properties = {
+        title_prop_name: {
+            "title": [
+                {
+                    "text": {"content": title[:180]},
+                }
+            ]
+        }
+    }
+
+    children = [_writing_block_to_notion(b) for b in blocks if b.get("text", "").strip()]
+
+    payload = {
+        "parent": {
+            "data_source_id": data_source_id,
+        },
+        "properties": properties,
+        "children": children,
+    }
+
+    response = requests.post(
+        "https://api.notion.com/v1/pages",
+        headers=headers,
+        json=payload,
+        timeout=30,
+    )
+
+    if response.status_code >= 400:
+        raise _notion_error("Notion create page from writing failed", response)
+
+    return response.json()

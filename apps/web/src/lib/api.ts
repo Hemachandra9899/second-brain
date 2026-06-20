@@ -452,3 +452,10 @@ export async function extractWritingTasks(documentId: string) {
     tasks: CreatedTaskCardData[];
   }>(`/writing/documents/${documentId}/extract`, {});
 }
+
+export async function syncWritingToNotion(documentId: string) {
+  return apiPost<{
+    ok: boolean;
+    notion_page: NotionPageCardData;
+  }>(`/writing/documents/${documentId}/sync/notion`, {});
+}

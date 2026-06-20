@@ -16,6 +16,7 @@ from app.modules.writing.writing_service import (
     create_writing_document,
     extract_tasks_from_writing,
     serialize_writing,
+    sync_writing_to_notion,
 )
 
 router = APIRouter()
@@ -149,4 +150,33 @@ def extract_document_tasks(
             }
             for task in tasks
         ],
+    }
+
+
+@router.post("/documents/{document_id}/sync/notion")
+def sync_document_to_notion(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    doc = (
+        db.query(WritingDocument)
+        .filter(
+            WritingDocument.id == document_id,
+            WritingDocument.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Writing document not found")
+
+    try:
+        notion_page = sync_writing_to_notion(db, doc, current_user)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {
+        "ok": True,
+        "notion_page": notion_page,
     }
