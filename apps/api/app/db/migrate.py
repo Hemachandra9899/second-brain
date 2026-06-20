@@ -28,12 +28,62 @@ def run_migrations():
             ))
             print("Created index: idx_users_provider_user_id")
 
+    if "projects" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS projects (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    name VARCHAR(300) NOT NULL,
+                    description TEXT,
+                    status VARCHAR(50) DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: projects")
+
+    if "goals" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS goals (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    project_id VARCHAR REFERENCES projects(id),
+                    title VARCHAR(500) NOT NULL,
+                    description TEXT,
+                    target_date VARCHAR(50),
+                    status VARCHAR(50) DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: goals")
+
+    if "memory_cards" not in existing_tables:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS memory_cards (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    project_id VARCHAR REFERENCES projects(id),
+                    title VARCHAR(500) NOT NULL,
+                    summary TEXT NOT NULL,
+                    tags TEXT,
+                    source_item_ids TEXT,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: memory_cards")
+
     with engine.begin() as conn:
         existing_columns_tasks = [col["name"] for col in inspector.get_columns("tasks")] if "tasks" in existing_tables else []
 
-        if "tasks" in existing_tables and "user_id" not in existing_columns_tasks:
-            conn.execute(text("ALTER TABLE tasks ADD COLUMN user_id VARCHAR REFERENCES users(id)"))
-            print("Added column: tasks.user_id")
+        if "tasks" in existing_tables:
+            if "user_id" not in existing_columns_tasks:
+                conn.execute(text("ALTER TABLE tasks ADD COLUMN user_id VARCHAR REFERENCES users(id)"))
+                print("Added column: tasks.user_id")
+            if "project_id" not in existing_columns_tasks:
+                conn.execute(text("ALTER TABLE tasks ADD COLUMN project_id VARCHAR REFERENCES projects(id)"))
+                print("Added column: tasks.project_id")
 
     with engine.begin() as conn:
         if "knowledge_items" in existing_tables:
@@ -41,6 +91,9 @@ def run_migrations():
             if "user_id" not in existing_columns_ki:
                 conn.execute(text("ALTER TABLE knowledge_items ADD COLUMN user_id VARCHAR REFERENCES users(id)"))
                 print("Added column: knowledge_items.user_id")
+            if "project_id" not in existing_columns_ki:
+                conn.execute(text("ALTER TABLE knowledge_items ADD COLUMN project_id VARCHAR REFERENCES projects(id)"))
+                print("Added column: knowledge_items.project_id")
 
     with engine.begin() as conn:
         if "mood_events" in existing_tables:

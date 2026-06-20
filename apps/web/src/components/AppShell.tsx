@@ -62,11 +62,14 @@ export function AppShell({ title = "Second Brain", children }: AppShellProps) {
               <Link href="/capture" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
                 Capture
               </Link>
+              <Link href="/memory" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
+                Memory
+              </Link>
+              <Link href="/projects" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
+                Projects
+              </Link>
               <Link href="/tasks" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
                 Tasks
-              </Link>
-              <Link href="/assistant" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
-                Assistant
               </Link>
               <Link href="/knowledge" className="rounded-full bg-white/60 px-4 py-2 text-sm shadow-sm backdrop-blur">
                 Knowledge
@@ -104,10 +107,10 @@ export function AppShell({ title = "Second Brain", children }: AppShellProps) {
 
         <nav className="fixed bottom-4 left-1/2 z-40 flex w-[92%] max-w-md -translate-x-1/2 justify-around rounded-full bg-white/80 px-4 py-3 shadow-xl backdrop-blur-xl md:hidden">
           <Link href="/capture" className="text-sm">Capture</Link>
+          <Link href="/memory" className="text-sm">Memory</Link>
+          <Link href="/projects" className="text-sm">Projects</Link>
           <Link href="/tasks" className="text-sm">Tasks</Link>
-          <Link href="/assistant" className="text-sm">AI</Link>
           <Link href="/knowledge" className="text-sm">KB</Link>
-          <Link href="/mood" className="text-sm">Mood</Link>
         </nav>
       </main>
     </div>

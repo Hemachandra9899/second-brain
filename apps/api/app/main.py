@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import Base, engine
 from app.db.migrate import run_migrations
-from app.routers import auth, health, tasks, chat, notion, whatsapp, knowledge, mood, demo, capture, brief
+from app.routers import auth, health, tasks, chat, notion, whatsapp, knowledge, mood, demo, capture, brief, memory, projects
 
 
 Base.metadata.create_all(bind=engine)
@@ -40,6 +40,10 @@ def root():
             "auth_google": "/auth/google",
             "capture": "/capture",
             "brief_today": "/brief/today",
+            "memory_consolidate": "/memory/consolidate",
+            "memory_cards": "/memory/cards",
+            "projects": "/projects",
+            "projects_goals": "/projects/goals",
             "tasks": "/tasks",
             "chat": "/chat",
             "assistant": "/chat",
@@ -67,3 +71,5 @@ app.include_router(mood.router, prefix="/mood", tags=["mood"])
 app.include_router(demo.router, prefix="/demo", tags=["demo"])
 app.include_router(capture.router, prefix="/capture", tags=["capture"])
 app.include_router(brief.router, prefix="/brief", tags=["brief"])
+app.include_router(memory.router, prefix="/memory", tags=["memory"])
+app.include_router(projects.router, prefix="/projects", tags=["projects"])

@@ -2,7 +2,7 @@ import json
 from uuid import uuid4
 from sqlalchemy.orm import Session
 
-from app.db.models import Task
+from app.db.models import Task, Project
 from app.services.llm_nvidia import ask_llm
 from app.services.knowledge_service import index_task_as_knowledge, index_knowledge_item
 from app.services.rag_service import ask_knowledge_base
@@ -24,11 +24,43 @@ def _safe_json_loads(text: str) -> dict:
         "capture_type": "note",
         "title": "Captured note",
         "description": text,
+        "project_name": None,
         "due_date": None,
         "priority": "Normal",
         "summary": "Saved as a note.",
         "suggested_next_action": "Review it later.",
     }
+
+
+def _find_or_create_project(db: Session, project_name: str, user_id: str | None = None) -> Project | None:
+    if not project_name:
+        return None
+
+    project = (
+        db.query(Project)
+        .filter(Project.name == project_name)
+        .filter(
+            (Project.user_id == user_id) if user_id else (Project.user_id.is_(None))
+        )
+        .first()
+    )
+
+    if project:
+        return project
+
+    project = Project(
+        id=str(uuid4()),
+        user_id=user_id,
+        name=project_name,
+        description=f"Auto-created from capture: {project_name}",
+        status="active",
+    )
+
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+
+    return project
 
 
 def classify_capture(text: str) -> dict:
@@ -40,6 +72,7 @@ Return strict JSON only:
   "capture_type": "task|note|idea|link|meeting_note|question|project_update",
   "title": "short title",
   "description": "clean useful description",
+  "project_name": "project name or null",
   "due_date": "YYYY-MM-DD or null",
   "priority": "Low|Normal|High",
   "summary": "one sentence summary",
@@ -53,6 +86,7 @@ Rules:
 - If it mentions meeting, call, discussion, investor, team, use meeting_note.
 - If it asks a question, use question.
 - If it mentions progress/update/blocker/status, use project_update.
+- If a project is mentioned, set project_name.
 - Do not invent exact due dates unless clearly present.
 
 Input:
@@ -70,6 +104,10 @@ Input:
 def handle_capture(db: Session, text: str, user_id: str | None = None) -> dict:
     data = classify_capture(text)
     capture_type = data.get("capture_type", "note")
+    project_name = data.get("project_name")
+
+    project = _find_or_create_project(db, project_name=project_name, user_id=user_id) if project_name else None
+    project_id = project.id if project else None
 
     created_task = None
     created_knowledge_item = None
@@ -79,6 +117,7 @@ def handle_capture(db: Session, text: str, user_id: str | None = None) -> dict:
         task = Task(
             id=str(uuid4()),
             user_id=user_id,
+            project_id=project_id,
             title=data.get("title") or text[:80],
             description=data.get("description") or text,
             status="Todo",
@@ -101,6 +140,7 @@ def handle_capture(db: Session, text: str, user_id: str | None = None) -> dict:
             "priority": task.priority,
             "due_date": task.due_date,
             "source": task.source,
+            "project_id": task.project_id,
         }
 
     elif capture_type == "question":
@@ -118,6 +158,7 @@ def handle_capture(db: Session, text: str, user_id: str | None = None) -> dict:
             source_type=capture_type,
             source_id=str(uuid4()),
             user_id=user_id,
+            project_id=project_id,
         )
 
         created_knowledge_item = {
@@ -125,12 +166,15 @@ def handle_capture(db: Session, text: str, user_id: str | None = None) -> dict:
             "title": item.title,
             "raw_text": item.raw_text,
             "source_type": item.source_type,
+            "project_id": item.project_id,
         }
 
     return {
         "capture_type": capture_type,
         "summary": data.get("summary"),
         "suggested_next_action": data.get("suggested_next_action"),
+        "project_name": project_name,
+        "project_id": project_id,
         "created_task": created_task,
         "created_knowledge_item": created_knowledge_item,
         "answer": answer,

@@ -30,10 +30,12 @@ def index_knowledge_item(
     source_type: str = "note",
     source_id: str | None = None,
     user_id: str | None = None,
+    project_id: str | None = None,
 ) -> KnowledgeItem:
     item = KnowledgeItem(
         id=str(uuid4()),
         user_id=user_id,
+        project_id=project_id,
         source_type=source_type,
         source_id=source_id or str(uuid4()),
         title=title,
