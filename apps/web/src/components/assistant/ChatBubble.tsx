@@ -15,7 +15,7 @@ export function ChatBubble({ role, content }: ChatBubbleProps) {
     <div
       className={
         isUser
-          ? "ml-auto max-w-[82%] rounded-[1.35rem] rounded-br-md bg-black px-4 py-3 text-sm leading-6 text-white shadow-sm"
+          ? "ml-auto max-w-[82%] rounded-[1.35rem] rounded-br-md bg-blue-600 px-4 py-3 text-sm leading-6 text-white shadow-sm"
           : "mr-auto max-w-[88%] rounded-[1.35rem] rounded-bl-md bg-white/95 px-4 py-3 text-sm leading-6 text-zinc-700 shadow-sm"
       }
     >

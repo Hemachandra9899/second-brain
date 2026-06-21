@@ -219,10 +219,10 @@ export function AssistantScreen() {
     <main
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
-      className="min-h-[100dvh] bg-[#f7edf2] text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white"
+      className="min-h-[100dvh] bg-sky-50 text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white"
     >
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-blue-100 via-blue-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-[#f7edf2]/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-sky-100 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push("/home")}
@@ -363,7 +363,7 @@ export function AssistantScreen() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setActionsOpen(true)}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-zinc-950 shadow-lg transition active:scale-95"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-600 text-3xl text-white shadow-lg transition active:scale-95"
               aria-label="Open actions"
             >
               +
@@ -388,7 +388,7 @@ export function AssistantScreen() {
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="ml-3 text-2xl text-zinc-950 disabled:opacity-30"
+                className="ml-3 text-2xl text-blue-600 disabled:opacity-30"
                 aria-label="Send"
               >
                 ↗
