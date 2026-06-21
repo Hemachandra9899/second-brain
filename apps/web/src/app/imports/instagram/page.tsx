@@ -94,6 +94,16 @@ export default function InstagramImportPage() {
                 return;
               }
 
+              const MAX_ZIP_MB = 150;
+              const MAX_ZIP_BYTES = MAX_ZIP_MB * 1024 * 1024;
+
+              if (selected.size > MAX_ZIP_BYTES) {
+                setNotice(
+                  `This ZIP is ${Math.round(selected.size / 1024 / 1024)}MB. Please upload an Instagram export under ${MAX_ZIP_MB}MB.`
+                );
+                return;
+              }
+
               void importFile(selected);
             }}
           />

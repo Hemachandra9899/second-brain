@@ -586,8 +586,16 @@ export async function uploadInstagramZip(file: File) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Instagram import failed");
+    let message = "Instagram import failed";
+
+    try {
+      const data = await res.json();
+      message = data.detail || JSON.stringify(data);
+    } catch {
+      message = await res.text();
+    }
+
+    throw new Error(message || "Instagram import failed");
   }
 
   return res.json() as Promise<InstagramImportResponse>;

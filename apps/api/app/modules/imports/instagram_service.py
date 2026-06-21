@@ -171,3 +171,73 @@ def import_instagram_zip(
         "activity_events": activity_count,
         "preview": preview,
     }
+
+
+def import_instagram_zip_from_path(
+    db: Session,
+    *,
+    zip_path: Path,
+    current_user: User,
+) -> dict:
+    try:
+        items = parse_instagram_zip(zip_path)
+    except Exception as exc:
+        return {
+            "ok": False,
+            "imported_items": 0,
+            "knowledge_items": 0,
+            "activity_events": 0,
+            "preview": [],
+            "error": f"Could not parse ZIP: {str(exc)}",
+        }
+
+    knowledge_count = 0
+    activity_count = 0
+    preview = []
+
+    for item in items[:100]:
+        try:
+            knowledge = index_knowledge_item(
+                db=db,
+                title=item["title"],
+                raw_text=item["text"],
+                source_type=item["source_type"],
+                source_id=item["id"],
+                user_id=current_user.id,
+            )
+            knowledge_count += 1
+
+            create_activity_event(
+                db,
+                event_type="instagram_imported",
+                title=item["title"],
+                description=item["text"][:240],
+                source_type=item["source_type"],
+                source_id=knowledge.id,
+                metadata={
+                    "source_file": item["source_file"],
+                },
+                current_user=current_user,
+            )
+            activity_count += 1
+
+            if len(preview) < 8:
+                preview.append(
+                    {
+                        "title": item["title"],
+                        "source_type": item["source_type"],
+                        "preview": item["text"][:240],
+                    }
+                )
+
+        except Exception as exc:
+            print(f"INSTAGRAM_ITEM_IMPORT_FAILED: {repr(exc)}", flush=True)
+            continue
+
+    return {
+        "ok": True,
+        "imported_items": len(items),
+        "knowledge_items": knowledge_count,
+        "activity_events": activity_count,
+        "preview": preview,
+    }
