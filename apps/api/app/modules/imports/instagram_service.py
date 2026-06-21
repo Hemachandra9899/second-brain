@@ -7,7 +7,8 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.db.session import SessionLocal
+from app.models import ImportJob, KnowledgeItem, User
 from app.modules.activity.activity_service import create_activity_event
 from app.modules.knowledge.knowledge_service import index_knowledge_item
 
@@ -241,3 +242,91 @@ def import_instagram_zip_from_path(
         "activity_events": activity_count,
         "preview": preview,
     }
+
+
+MAX_IMPORT_ITEMS = 250
+
+
+def process_instagram_import_job(
+    job_id: str,
+    zip_path_str: str,
+    user_id: str,
+):
+    db = SessionLocal()
+    zip_path = Path(zip_path_str)
+
+    try:
+        job = db.query(ImportJob).filter(ImportJob.id == job_id).first()
+        if not job:
+            print(f"INSTAGRAM_IMPORT_JOB_NOT_FOUND: {job_id}", flush=True)
+            return
+
+        job.status = "processing"
+        db.commit()
+
+        items = parse_instagram_zip(zip_path, max_items=MAX_IMPORT_ITEMS)
+
+        job.total_items = len(items)
+        db.commit()
+
+        for index, item in enumerate(items[:MAX_IMPORT_ITEMS], start=1):
+            try:
+                knowledge = KnowledgeItem(
+                    user_id=user_id,
+                    title=item["title"],
+                    raw_text=item["text"],
+                    source_type=item["source_type"],
+                    source_id=item["id"],
+                )
+                db.add(knowledge)
+                db.commit()
+                db.refresh(knowledge)
+
+                create_activity_event(
+                    db,
+                    event_type="instagram_imported",
+                    title=item["title"],
+                    description=item["text"][:240],
+                    source_type=item["source_type"],
+                    source_id=str(knowledge.id),
+                    metadata={
+                        "source_file": item.get("source_file"),
+                    },
+                    user_id=user_id,
+                )
+
+                job.knowledge_items += 1
+                job.activity_events += 1
+                job.processed_items = index
+
+                if index % 10 == 0:
+                    db.commit()
+
+            except Exception as exc:
+                print(f"INSTAGRAM_ITEM_FAILED {index}: {repr(exc)}", flush=True)
+                job.processed_items = index
+                db.commit()
+                continue
+
+        job.status = "completed"
+        db.commit()
+
+    except Exception as exc:
+        print(f"INSTAGRAM_IMPORT_JOB_FAILED: {repr(exc)}", flush=True)
+
+        try:
+            job = db.query(ImportJob).filter(ImportJob.id == job_id).first()
+            if job:
+                job.status = "failed"
+                job.error = str(exc)
+                db.commit()
+        except Exception:
+            pass
+
+    finally:
+        db.close()
+
+        try:
+            zip_path.unlink(missing_ok=True)
+        except Exception:
+            pass

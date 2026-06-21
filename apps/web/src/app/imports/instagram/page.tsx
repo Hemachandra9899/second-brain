@@ -2,13 +2,19 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { uploadInstagramZip, type InstagramImportResponse } from "@/lib/api";
+import {
+  uploadInstagramZip,
+  getInstagramImportJob,
+  type InstagramImportStartResponse,
+  type InstagramImportJob,
+} from "@/lib/api";
 
 export default function InstagramImportPage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<InstagramImportResponse | null>(null);
+  const [start, setStart] = useState<InstagramImportStartResponse | null>(null);
+  const [job, setJob] = useState<InstagramImportJob | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -16,19 +22,45 @@ export default function InstagramImportPage() {
     inputRef.current?.click();
   }
 
+  async function pollJob(jobId: string) {
+    const interval = window.setInterval(async () => {
+      try {
+        const next = await getInstagramImportJob(jobId);
+        setJob(next);
+
+        if (next.status === "completed" || next.status === "failed") {
+          window.clearInterval(interval);
+
+          if (next.status === "completed") {
+            setNotice("Instagram import completed.");
+          } else {
+            setNotice(next.error || "Instagram import failed.");
+          }
+
+          setLoading(false);
+        }
+      } catch {
+        window.clearInterval(interval);
+        setNotice("Could not check import status.");
+        setLoading(false);
+      }
+    }, 2000);
+  }
+
   async function importFile(selected: File) {
     setFile(selected);
     setLoading(true);
-    setResult(null);
+    setStart(null);
+    setJob(null);
     setNotice(`Uploading ${selected.name}...`);
 
     try {
       const res = await uploadInstagramZip(selected);
-      setResult(res);
-      setNotice("Instagram ZIP imported into your Second Brain.");
+      setStart(res);
+      setNotice("Import started. Processing in background...");
+      void pollJob(res.job_id);
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Instagram import failed.");
-    } finally {
       setLoading(false);
     }
   }
@@ -144,44 +176,40 @@ export default function InstagramImportPage() {
           ) : null}
         </section>
 
-        {result ? (
+        {job ? (
           <section className="mt-8 rounded-[2.2rem] bg-white p-6 shadow-sm ring-1 ring-blue-100 dark:bg-zinc-900 dark:ring-white/10">
             <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
-              Imported
+              Import progress
             </p>
 
-            <h2 className="font-display mt-4 text-4xl leading-none tracking-[-0.05em]">
-              {result.imported_items} items found
-            </h2>
+            <div className="mt-5 rounded-[1.5rem] bg-blue-50 p-4 text-sm text-blue-700">
+              <p className="font-semibold">
+                Status: {job.status}
+              </p>
 
-            <p className="mt-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-              {result.knowledge_items} memories indexed &middot;{" "}
-              {result.activity_events} activity cards created
-            </p>
+              <p className="mt-2">
+                {job.processed_items} / {job.total_items || "?"} items processed
+              </p>
 
-            <div className="mt-6 space-y-3">
-              {result.preview.map((item, index) => (
-                <div
-                  key={`${item.title}-${index}`}
-                  className="rounded-[1.5rem] bg-blue-50 p-4 dark:bg-zinc-950"
-                >
-                  <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
-                    {item.source_type}
-                  </p>
-                  <h3 className="mt-2 font-semibold">{item.title}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm text-zinc-500">
-                    {item.preview}
-                  </p>
-                </div>
-              ))}
+              <p className="mt-1">
+                {job.knowledge_items} memories created
+              </p>
+
+              {job.error ? (
+                <p className="mt-2 text-red-600">
+                  {job.error}
+                </p>
+              ) : null}
             </div>
 
-            <Link
-              href="/home"
-              className="mt-6 inline-flex rounded-full bg-blue-600 px-6 py-4 text-sm font-semibold text-white"
-            >
-              View in Home &rarr;
-            </Link>
+            {job.status === "completed" && job.knowledge_items > 0 ? (
+              <Link
+                href="/home"
+                className="mt-6 inline-flex rounded-full bg-blue-600 px-6 py-4 text-sm font-semibold text-white"
+              >
+                View in Home &rarr;
+              </Link>
+            ) : null}
           </section>
         ) : null}
       </div>

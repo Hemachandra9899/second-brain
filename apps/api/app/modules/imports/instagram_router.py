@@ -1,27 +1,28 @@
-import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.auth import require_current_user
 from app.db.session import get_db
-from app.models import User
-from app.modules.imports.instagram_service import import_instagram_zip_from_path
+from app.models import ImportJob, User
+from app.modules.imports.instagram_service import process_instagram_import_job
 
 router = APIRouter()
 
 MAX_ZIP_BYTES = 150 * 1024 * 1024
+UPLOAD_DIR = Path("/tmp/second-brain-imports")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @router.post("/instagram")
 async def upload_instagram_zip(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_current_user),
 ):
     print("INSTAGRAM_IMPORT_POST_TRIGGERED", flush=True)
-    print(f"filename={file.filename} content_type={file.content_type}", flush=True)
 
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(
@@ -29,40 +30,88 @@ async def upload_instagram_zip(
             detail="Please upload an Instagram .zip export.",
         )
 
-    try:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            zip_path = Path(tmpdir) / "instagram_export.zip"
+    import uuid
+    job = ImportJob(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        source_type="instagram",
+        status="queued",
+        filename=file.filename,
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
 
-            total = 0
-            with zip_path.open("wb") as out:
-                while True:
-                    chunk = await file.read(1024 * 1024)
-                    if not chunk:
-                        break
+    zip_path = UPLOAD_DIR / f"{job.id}.zip"
 
-                    total += len(chunk)
+    total = 0
+    with zip_path.open("wb") as out:
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
 
-                    if total > MAX_ZIP_BYTES:
-                        raise HTTPException(
-                            status_code=413,
-                            detail="ZIP is too large. Please upload a file under 150MB.",
-                        )
+            total += len(chunk)
 
-                    out.write(chunk)
+            if total > MAX_ZIP_BYTES:
+                job.status = "failed"
+                job.error = "ZIP is too large. Please upload a file under 150MB."
+                db.commit()
 
-            print(f"instagram_zip_size_bytes={total}", flush=True)
+                try:
+                    zip_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
-            return import_instagram_zip_from_path(
-                db=db,
-                zip_path=zip_path,
-                current_user=current_user,
-            )
+                raise HTTPException(
+                    status_code=413,
+                    detail="ZIP is too large. Please upload a file under 150MB.",
+                )
 
-    except HTTPException:
-        raise
-    except Exception as exc:
-        print(f"INSTAGRAM_IMPORT_FAILED: {repr(exc)}", flush=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Instagram import failed: {str(exc)}",
-        )
+            out.write(chunk)
+
+    print(f"instagram_zip_saved job_id={job.id} size={total}", flush=True)
+
+    background_tasks.add_task(
+        process_instagram_import_job,
+        str(job.id),
+        str(zip_path),
+        str(current_user.id),
+    )
+
+    return {
+        "ok": True,
+        "job_id": str(job.id),
+        "status": "queued",
+        "message": "Instagram import started.",
+    }
+
+
+@router.get("/instagram/jobs/{job_id}")
+def get_instagram_import_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    job = (
+        db.query(ImportJob)
+        .filter(ImportJob.id == job_id)
+        .filter(ImportJob.user_id == current_user.id)
+        .first()
+    )
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Import job not found")
+
+    return {
+        "id": str(job.id),
+        "status": job.status,
+        "filename": job.filename,
+        "total_items": job.total_items,
+        "processed_items": job.processed_items,
+        "knowledge_items": job.knowledge_items,
+        "activity_events": job.activity_events,
+        "error": job.error,
+        "created_at": job.created_at,
+        "updated_at": job.updated_at,
+    }

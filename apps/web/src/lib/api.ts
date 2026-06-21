@@ -525,16 +525,22 @@ export async function syncWritingToNotion(documentId: string) {
   }>(`/writing/documents/${documentId}/sync/notion`, {});
 }
 
-export type InstagramImportResponse = {
+export type InstagramImportStartResponse = {
   ok: boolean;
-  imported_items: number;
+  job_id: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  message?: string;
+};
+
+export type InstagramImportJob = {
+  id: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  filename?: string | null;
+  total_items: number;
+  processed_items: number;
   knowledge_items: number;
   activity_events: number;
-  preview: {
-    title: string;
-    source_type: string;
-    preview: string;
-  }[];
+  error?: string | null;
 };
 
 export type NotionImageUploadResponse = {
@@ -598,5 +604,9 @@ export async function uploadInstagramZip(file: File) {
     throw new Error(message || "Instagram import failed");
   }
 
-  return res.json() as Promise<InstagramImportResponse>;
+  return res.json() as Promise<InstagramImportStartResponse>;
+}
+
+export async function getInstagramImportJob(jobId: string) {
+  return apiGet<InstagramImportJob>(`/imports/instagram/jobs/${jobId}`);
 }
