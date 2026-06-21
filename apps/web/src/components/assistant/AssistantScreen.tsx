@@ -25,7 +25,10 @@ import type {
   CreatedTaskCardData,
   NotionPageCardData,
   TaskChoice,
+  ActivityEvent,
 } from "@/lib/api";
+import { getRecentActivity } from "@/lib/api";
+import { SavedInsightsDrawer } from "@/components/assistant/SavedInsightsDrawer";
 
 type Message = {
   role: "user" | "assistant";
@@ -79,6 +82,9 @@ export function AssistantScreen() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   const user = getStoredUser();
   const signedIn = isSignedIn();
@@ -87,6 +93,12 @@ export function AssistantScreen() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, loading]);
+
+  useEffect(() => {
+    getRecentActivity()
+      .then(setActivityEvents)
+      .catch(() => setActivityEvents([]));
+  }, []);
 
   function shouldUseBrainAsk(message: string) {
     const text = message.trim().toLowerCase();
@@ -186,15 +198,36 @@ export function AssistantScreen() {
     });
   }
 
+  function onTouchStart(e: React.TouchEvent) {
+    setTouchStartX(e.touches[0].clientX);
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX === null) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const delta = endX - touchStartX;
+
+    if (touchStartX < 40 && delta > 80) {
+      setDrawerOpen(true);
+    }
+
+    setTouchStartX(null);
+  }
+
   return (
-    <main className="min-h-[100dvh] bg-sky-50 text-slate-950 transition-colors dark:bg-[#050505] dark:text-white">
+    <main
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      className="min-h-[100dvh] bg-sky-50 text-slate-950 transition-colors dark:bg-[#050505] dark:text-white"
+    >
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-sky-100 via-blue-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
         <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push("/home")}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-slate-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
-              aria-label="Go to insights"
+              aria-label="Go home"
             >
               ‹
             </button>
@@ -378,6 +411,16 @@ export function AssistantScreen() {
             user={user}
           />
         ) : null}
+
+        <SavedInsightsDrawer
+          open={drawerOpen}
+          events={activityEvents.filter((event) =>
+            ["notion_page_created", "writing_saved", "memory_card_created"].includes(
+              event.event_type
+            )
+          )}
+          onClose={() => setDrawerOpen(false)}
+        />
       </div>
     </main>
   );
