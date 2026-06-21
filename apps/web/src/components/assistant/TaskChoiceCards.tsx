@@ -56,7 +56,7 @@ export function TaskChoiceCards({
           </h3>
 
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-pink-700">
+            <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
               {task.status || "Todo"}
             </span>
 

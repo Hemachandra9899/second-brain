@@ -8,8 +8,8 @@ import type {
 export function NotionPageCard({ page }: { page: NotionPageCardData }) {
   return (
     <div className="mt-3 overflow-hidden rounded-[1.6rem] bg-white shadow-sm ring-1 ring-black/5">
-      <div className="bg-gradient-to-br from-pink-100 to-white p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-pink-500">
+      <div className="bg-gradient-to-br from-blue-100 to-white p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
           Created in Notion
         </p>
 
@@ -39,7 +39,7 @@ export function NotionPageCard({ page }: { page: NotionPageCardData }) {
 export function TaskResultCard({ task }: { task: CreatedTaskCardData }) {
   return (
     <div className="mt-3 rounded-[1.6rem] bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-pink-500">
+      <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
         Task created
       </p>
 
@@ -48,7 +48,7 @@ export function TaskResultCard({ task }: { task: CreatedTaskCardData }) {
       </h3>
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-pink-700">
+        <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
           {task.status || "Todo"}
         </span>
 

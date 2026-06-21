@@ -51,7 +51,7 @@ export function SavedInsightsDrawer({
         <div className="mt-8 space-y-4">
           {cards.length === 0 ? (
             <div className="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
-              <p className="text-xs font-semibold uppercase tracking-wide text-pink-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                 Empty
               </p>
               <h3 className="mt-4 text-3xl font-semibold tracking-[-0.06em] text-zinc-950 dark:text-white">
@@ -69,7 +69,7 @@ export function SavedInsightsDrawer({
 
             const card = (
               <article className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
-                <p className="text-xs font-semibold uppercase tracking-wide text-pink-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                   {event.event_type.replaceAll("_", " ")}
                 </p>
 

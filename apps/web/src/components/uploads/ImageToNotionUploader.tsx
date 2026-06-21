@@ -58,7 +58,7 @@ export function ImageToNotionUploader() {
 
   return (
     <section className="rounded-[2.2rem] bg-white p-6 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
-      <p className="text-xs font-semibold uppercase tracking-wide text-pink-500">
+      <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
         Image memory
       </p>
 
@@ -108,14 +108,14 @@ export function ImageToNotionUploader() {
       </button>
 
       {notice ? (
-        <p className="mt-4 rounded-2xl bg-pink-50 px-4 py-3 text-sm font-medium text-pink-700 dark:bg-zinc-800 dark:text-zinc-300">
+        <p className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:bg-zinc-800 dark:text-zinc-300">
           {notice}
         </p>
       ) : null}
 
       {result ? (
         <div className="mt-5 rounded-[1.6rem] bg-zinc-50 p-4 dark:bg-zinc-950">
-          <p className="text-xs font-semibold uppercase tracking-wide text-pink-500">
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
             Created in Notion
           </p>
 

@@ -107,7 +107,7 @@ export function CommandTray({
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onSelect(item.insert)}
-          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-pink-50 active:scale-[0.99]"
+          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-blue-50 active:scale-[0.99]"
         >
           <div className="min-w-0">
             <p className="text-sm font-semibold text-zinc-950">
@@ -118,7 +118,7 @@ export function CommandTray({
             </p>
           </div>
 
-          <span className="ml-3 rounded-full bg-pink-50 px-3 py-1 text-xs font-semibold text-pink-700">
+          <span className="ml-3 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
             Use
           </span>
         </button>

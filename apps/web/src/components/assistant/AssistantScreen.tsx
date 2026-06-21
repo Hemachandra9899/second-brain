@@ -221,7 +221,7 @@ export function AssistantScreen() {
       onTouchEnd={onTouchEnd}
       className="min-h-[100dvh] bg-[#f7edf2] text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white"
     >
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-pink-100 via-pink-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-blue-100 via-blue-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
         <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-[#f7edf2]/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
           <div className="flex items-center justify-between">
             <button
@@ -303,7 +303,7 @@ export function AssistantScreen() {
                     onClick={() => sendMessage(card.prompt)}
                     className="rounded-[1.75rem] bg-white/90 p-4 text-left shadow-sm transition active:scale-[0.98]"
                   >
-                    <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-pink-100 via-pink-50 to-white" />
+                    <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-blue-100 via-blue-50 to-white" />
                     <p className="text-lg font-semibold tracking-tight">
                       {card.title}
                     </p>
@@ -454,7 +454,7 @@ function ActionsSheet({ onClose }: { onClose: () => void }) {
               key={href}
               href={href}
               onClick={onClose}
-              className="rounded-2xl bg-pink-50 px-4 py-3 text-sm font-medium text-zinc-700"
+              className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-zinc-700"
             >
               {label}
             </Link>
@@ -493,7 +493,7 @@ function ProfileSheet({
         </div>
 
         {signedIn ? (
-          <div className="rounded-[1.5rem] bg-pink-50 p-4 dark:bg-zinc-800">
+          <div className="rounded-[1.5rem] bg-blue-50 p-4 dark:bg-zinc-800">
             <div className="flex items-center gap-3">
               {user?.picture ? (
                 <img

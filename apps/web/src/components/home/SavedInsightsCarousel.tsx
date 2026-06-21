@@ -94,7 +94,7 @@ export function SavedInsightsCarousel({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-100 text-lg font-bold text-zinc-900 dark:bg-zinc-800 dark:text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-lg font-bold text-blue-600 dark:bg-zinc-800 dark:text-white">
                     {event.source_type === "notion" ? "N" : "✦"}
                   </div>
 
