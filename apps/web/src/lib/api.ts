@@ -524,3 +524,34 @@ export async function syncWritingToNotion(documentId: string) {
     notion_page: NotionPageCardData;
   }>(`/writing/documents/${documentId}/sync/notion`, {});
 }
+
+export type InstagramImportResponse = {
+  imported_items: number;
+  knowledge_items: number;
+  activity_events: number;
+  preview: {
+    title: string;
+    source_type: string;
+    preview: string;
+  }[];
+};
+
+export async function uploadInstagramZip(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch(`${API_URL}/imports/instagram`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(),
+    },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Instagram import failed");
+  }
+
+  return res.json() as Promise<InstagramImportResponse>;
+}
