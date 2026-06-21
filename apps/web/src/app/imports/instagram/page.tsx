@@ -5,36 +5,32 @@ import Link from "next/link";
 import { uploadInstagramZip, type InstagramImportResponse } from "@/lib/api";
 
 export default function InstagramImportPage() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<InstagramImportResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
 
-  async function upload() {
-    if (!file) {
-      fileInputRef.current?.click();
-      return;
-    }
+  function openPicker() {
+    inputRef.current?.click();
+  }
 
+  async function importFile(selected: File) {
+    setFile(selected);
     setLoading(true);
-    setNotice("");
     setResult(null);
+    setNotice(`Uploading ${selected.name}...`);
 
     try {
-      const res = await uploadInstagramZip(file);
+      const res = await uploadInstagramZip(selected);
       setResult(res);
-      setNotice("Instagram data imported into your Second Brain.");
+      setNotice("Instagram ZIP imported into your Second Brain.");
     } catch (err) {
-      setNotice(err instanceof Error ? err.message : "Import failed.");
+      setNotice(err instanceof Error ? err.message : "Instagram import failed.");
     } finally {
       setLoading(false);
     }
-  }
-
-  function chooseFile() {
-    fileInputRef.current?.click();
   }
 
   return (
@@ -54,44 +50,59 @@ export default function InstagramImportPage() {
 
           <Link
             href="/"
-            className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-black"
+            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
           >
             Brain
           </Link>
         </header>
 
         <section className="mt-10">
-          <h1 className="font-display text-5xl leading-none tracking-[-0.05em]">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-blue-600">
+            Second Brain
+          </p>
+
+          <h1 className="font-display mt-3 text-5xl leading-none tracking-[-0.05em]">
             Import Instagram memory.
           </h1>
 
           <p className="mt-5 text-base leading-7 text-zinc-600 dark:text-zinc-400">
-            Upload your Instagram data export. I'll turn posts, captions,
+            Upload your Instagram export ZIP. I&rsquo;ll extract useful captions,
             comments, saved items, and messages into searchable memory.
           </p>
         </section>
 
-        <section className="mt-8 rounded-[2.2rem] bg-white p-6 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+        <section className="mt-8 rounded-[2.2rem] bg-white p-6 shadow-sm ring-1 ring-blue-100 dark:bg-zinc-900 dark:ring-white/10">
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
             Upload ZIP
           </p>
 
           <input
-            ref={fileInputRef}
+            ref={inputRef}
             type="file"
-            accept=".zip,application/zip,application/x-zip-compressed"
+            accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream"
             className="sr-only"
             onChange={(e) => {
               const selected = e.target.files?.[0] || null;
-              setFile(selected);
-              setNotice(selected ? "ZIP selected. Tap Import to upload." : "");
+
+              if (!selected) {
+                setNotice("No file selected.");
+                return;
+              }
+
+              if (!selected.name.toLowerCase().endsWith(".zip")) {
+                setNotice("Please choose the Instagram .zip export file.");
+                return;
+              }
+
+              void importFile(selected);
             }}
           />
 
           <button
             type="button"
-            onClick={chooseFile}
-            className="mt-5 flex min-h-44 w-full flex-col items-center justify-center rounded-[1.8rem] border border-dashed border-blue-200 bg-white p-6 text-center active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-950"
+            onClick={openPicker}
+            disabled={loading}
+            className="mt-5 flex min-h-44 w-full flex-col items-center justify-center rounded-[1.8rem] border border-dashed border-blue-200 bg-blue-50 p-6 text-center active:scale-[0.99] disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950"
           >
             <span className="text-4xl">＋</span>
 
@@ -100,17 +111,20 @@ export default function InstagramImportPage() {
             </span>
 
             <span className="mt-2 text-xs text-zinc-500">
-              Opens your phone file picker
+              {loading ? "Uploading now..." : "Opens your phone file picker"}
             </span>
           </button>
 
           <button
             type="button"
-            onClick={upload}
+            onClick={() => {
+              if (file) void importFile(file);
+              else openPicker();
+            }}
             disabled={loading}
-            className="mt-5 w-full rounded-full bg-black px-5 py-4 text-sm font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-black"
+            className="mt-5 w-full rounded-full bg-blue-600 px-5 py-4 text-sm font-semibold text-white disabled:opacity-40"
           >
-            {loading ? "Importing\u2026" : file ? "Import to Second Brain" : "Upload ZIP"}
+            {loading ? "Importing..." : file ? "Import again" : "Upload ZIP"}
           </button>
 
           {notice ? (
@@ -121,8 +135,8 @@ export default function InstagramImportPage() {
         </section>
 
         {result ? (
-          <section className="mt-8 rounded-[2.2rem] bg-white p-6 shadow-sm ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+          <section className="mt-8 rounded-[2.2rem] bg-white p-6 shadow-sm ring-1 ring-blue-100 dark:bg-zinc-900 dark:ring-white/10">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
               Imported
             </p>
 
@@ -131,7 +145,7 @@ export default function InstagramImportPage() {
             </h2>
 
             <p className="mt-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-              {result.knowledge_items} memories indexed {'\u00B7'}{" "}
+              {result.knowledge_items} memories indexed &middot;{" "}
               {result.activity_events} activity cards created
             </p>
 
@@ -139,9 +153,9 @@ export default function InstagramImportPage() {
               {result.preview.map((item, index) => (
                 <div
                   key={`${item.title}-${index}`}
-                  className="rounded-[1.5rem] bg-zinc-50 p-4 dark:bg-zinc-950"
+                  className="rounded-[1.5rem] bg-blue-50 p-4 dark:bg-zinc-950"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                  <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
                     {item.source_type}
                   </p>
                   <h3 className="mt-2 font-semibold">{item.title}</h3>
@@ -154,9 +168,9 @@ export default function InstagramImportPage() {
 
             <Link
               href="/home"
-              className="mt-6 inline-flex rounded-full bg-black px-6 py-4 text-sm font-semibold text-white dark:bg-white dark:text-black"
+              className="mt-6 inline-flex rounded-full bg-blue-600 px-6 py-4 text-sm font-semibold text-white"
             >
-              {'View in Home \u2192'}
+              View in Home &rarr;
             </Link>
           </section>
         ) : null}
