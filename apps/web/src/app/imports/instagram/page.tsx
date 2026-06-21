@@ -38,7 +38,7 @@ export default function InstagramImportPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f7edf2] text-zinc-950 dark:bg-[#050505] dark:text-white">
+    <main className="min-h-[100dvh] bg-blue-50 text-zinc-950 dark:bg-[#050505] dark:text-white">
       <div className="mx-auto min-h-[100dvh] max-w-md px-5 pb-20 pt-10">
         <header className="flex items-center justify-between">
           <Link
@@ -62,7 +62,7 @@ export default function InstagramImportPage() {
 
         <section className="mt-10">
           <h1 className="font-display text-5xl leading-none tracking-[-0.05em]">
-            Import your Instagram ZIP.
+            Import Instagram memory.
           </h1>
 
           <p className="mt-5 text-base leading-7 text-zinc-600 dark:text-zinc-400">
@@ -91,7 +91,7 @@ export default function InstagramImportPage() {
           <button
             type="button"
             onClick={chooseFile}
-            className="mt-5 flex min-h-44 w-full flex-col items-center justify-center rounded-[1.8rem] border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-950"
+            className="mt-5 flex min-h-44 w-full flex-col items-center justify-center rounded-[1.8rem] border border-dashed border-blue-200 bg-white p-6 text-center active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-950"
           >
             <span className="text-4xl">＋</span>
 

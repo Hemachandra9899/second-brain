@@ -526,6 +526,7 @@ export async function syncWritingToNotion(documentId: string) {
 }
 
 export type InstagramImportResponse = {
+  ok: boolean;
   imported_items: number;
   knowledge_items: number;
   activity_events: number;
