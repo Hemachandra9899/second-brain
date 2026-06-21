@@ -15,8 +15,8 @@ export function ChatBubble({ role, content }: ChatBubbleProps) {
     <div
       className={
         isUser
-          ? "ml-auto max-w-[82%] rounded-[1.35rem] rounded-br-md bg-sky-600 px-4 py-3 text-sm leading-6 text-white shadow-sm"
-          : "mr-auto max-w-[88%] rounded-[1.35rem] rounded-bl-md bg-white/95 px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm"
+          ? "ml-auto max-w-[82%] rounded-[1.35rem] rounded-br-md bg-black px-4 py-3 text-sm leading-6 text-white shadow-sm"
+          : "mr-auto max-w-[88%] rounded-[1.35rem] rounded-bl-md bg-white/95 px-4 py-3 text-sm leading-6 text-zinc-700 shadow-sm"
       }
     >
       {isUser ? (
@@ -39,10 +39,10 @@ export function ChatBubble({ role, content }: ChatBubbleProps) {
               </ol>
             ),
             strong: ({ children }) => (
-              <strong className="font-semibold text-slate-950">{children}</strong>
+              <strong className="font-semibold text-zinc-950">{children}</strong>
             ),
             code: ({ children }) => (
-              <code className="rounded-md bg-slate-100 px-1 py-0.5 text-xs text-slate-800">
+              <code className="rounded-md bg-zinc-100 px-1 py-0.5 text-xs text-zinc-800">
                 {children}
               </code>
             ),

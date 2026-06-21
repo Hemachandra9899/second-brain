@@ -219,31 +219,28 @@ export function AssistantScreen() {
     <main
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
-      className="min-h-[100dvh] bg-sky-50 text-slate-950 transition-colors dark:bg-[#050505] dark:text-white"
+      className="min-h-[100dvh] bg-[#f7edf2] text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white"
     >
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-sky-100 via-blue-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-pink-100 via-pink-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/60 bg-[#f7edf2]/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push("/home")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-slate-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-zinc-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
               aria-label="Go home"
             >
               ‹
             </button>
 
             <div className="text-center">
-              <p className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                Second Brain
-              </p>
-              <p className="text-[11px] font-medium text-sky-600 dark:text-sky-400">
-                AI Assistant
+              <p className="font-display text-lg tracking-[-0.03em] text-zinc-950 dark:text-white">
+                Brain
               </p>
             </div>
 
             <button
               onClick={() => setProfileOpen(true)}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/85 text-sm font-semibold text-slate-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/85 text-sm font-semibold text-zinc-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
               aria-label="Open profile"
             >
               {user?.picture ? (
@@ -262,25 +259,25 @@ export function AssistantScreen() {
         <section className="flex-1 overflow-y-auto px-4 pb-32 pt-24">
           {!hasStarted ? (
             <div className="pb-5 transition-all duration-300">
-              <h1 className="mx-auto max-w-xs text-center text-4xl font-semibold leading-[0.98] tracking-[-0.04em] text-slate-950">
-                Ready to organize your second brain?
+              <h1 className="font-display mx-auto max-w-sm text-center text-5xl leading-[0.98] tracking-[-0.05em] text-zinc-950 dark:text-white">
+                What should we think through today?
               </h1>
 
-              <p className="mx-auto mt-4 max-w-xs text-center text-sm leading-6 text-slate-600">
+              <p className="mx-auto mt-4 max-w-xs text-center text-sm leading-6 text-zinc-600">
                 Ask, capture, plan, search memory, or send commands with /.
               </p>
 
               {!signedIn ? (
                 <div className="mt-5 rounded-[1.75rem] bg-white/85 p-4 shadow-sm backdrop-blur">
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="text-sm font-semibold text-zinc-900">
                     Sign in to save memory
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                  <p className="mt-1 text-xs leading-5 text-zinc-600">
                     Keep tasks, notes, mood, projects, and graph memory private.
                   </p>
                   <Link
                     href="/login"
-                    className="mt-3 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white"
+                    className="mt-3 inline-flex rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
                   >
                     Continue with Google
                   </Link>
@@ -292,7 +289,7 @@ export function AssistantScreen() {
                   <button
                     key={chip}
                     onClick={() => sendMessage(chip)}
-                    className="shrink-0 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition active:scale-95"
+                    className="shrink-0 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition active:scale-95"
                   >
                     {chip}
                   </button>
@@ -306,11 +303,11 @@ export function AssistantScreen() {
                     onClick={() => sendMessage(card.prompt)}
                     className="rounded-[1.75rem] bg-white/90 p-4 text-left shadow-sm transition active:scale-[0.98]"
                   >
-                    <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-sky-100 via-blue-100 to-white" />
+                    <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-pink-100 via-pink-50 to-white" />
                     <p className="text-lg font-semibold tracking-tight">
                       {card.title}
                     </p>
-                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-600">
+                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-zinc-600">
                       {card.body}
                     </p>
                   </button>
@@ -366,7 +363,7 @@ export function AssistantScreen() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setActionsOpen(true)}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-slate-950 shadow-lg transition active:scale-95"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-zinc-950 shadow-lg transition active:scale-95"
               aria-label="Open actions"
             >
               +
@@ -385,13 +382,13 @@ export function AssistantScreen() {
                   setTrayOpen(shouldShowCommandTray(value));
                 }}
                 placeholder="Ask, /command, or @mention..."
-                className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
+                className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-zinc-800 outline-none placeholder:text-zinc-400"
               />
 
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="ml-3 text-2xl text-slate-950 disabled:opacity-30"
+                className="ml-3 text-2xl text-zinc-950 disabled:opacity-30"
                 aria-label="Send"
               >
                 ↗
@@ -439,13 +436,13 @@ function ActionsSheet({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/25 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/25 p-4 backdrop-blur-sm">
       <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom-4 duration-200">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-lg font-semibold">Actions</p>
           <button
             onClick={onClose}
-            className="rounded-full bg-slate-100 px-3 py-1 text-sm"
+            className="rounded-full bg-zinc-100 px-3 py-1 text-sm"
           >
             Close
           </button>
@@ -457,7 +454,7 @@ function ActionsSheet({ onClose }: { onClose: () => void }) {
               key={href}
               href={href}
               onClick={onClose}
-              className="rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-slate-700"
+              className="rounded-2xl bg-pink-50 px-4 py-3 text-sm font-medium text-zinc-700"
             >
               {label}
             </Link>
@@ -480,23 +477,23 @@ function ProfileSheet({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/25 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/25 p-4 backdrop-blur-sm">
       <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl dark:bg-zinc-900">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-semibold text-slate-950 dark:text-white">
+          <p className="text-lg font-semibold text-zinc-950 dark:text-white">
             Profile
           </p>
 
           <button
             onClick={onClose}
-            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
+            className="rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             Close
           </button>
         </div>
 
         {signedIn ? (
-          <div className="rounded-[1.5rem] bg-sky-50 p-4 dark:bg-zinc-800">
+          <div className="rounded-[1.5rem] bg-pink-50 p-4 dark:bg-zinc-800">
             <div className="flex items-center gap-3">
               {user?.picture ? (
                 <img
@@ -505,16 +502,16 @@ function ProfileSheet({
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white dark:bg-white dark:text-slate-950">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-sm font-bold text-white dark:bg-white dark:text-black">
                   U
                 </div>
               )}
 
               <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-950 dark:text-white">
+                <p className="truncate font-semibold text-zinc-950 dark:text-white">
                   {user?.name || "Signed in"}
                 </p>
-                <p className="truncate text-xs text-slate-500 dark:text-zinc-400">
+                <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                   {user?.email}
                 </p>
               </div>
@@ -523,7 +520,7 @@ function ProfileSheet({
         ) : (
           <Link
             href="/login"
-            className="block rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
+            className="block rounded-full bg-black px-5 py-3 text-center text-sm font-semibold text-white dark:bg-white dark:text-black"
           >
             Continue with Google
           </Link>
@@ -532,21 +529,21 @@ function ProfileSheet({
         <div className="mt-4 grid gap-2">
           <button
             onClick={toggleTheme}
-            className="rounded-2xl bg-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
+            className="rounded-2xl bg-zinc-100 px-4 py-3 text-left text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           </button>
 
           <Link
             href="/settings/integrations"
-            className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
+            className="rounded-2xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             Connect Notion
           </Link>
 
           <Link
             href="/imports/instagram"
-            className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-zinc-800 dark:text-zinc-200"
+            className="rounded-2xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
           >
             Upload Instagram export
           </Link>

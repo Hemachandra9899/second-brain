@@ -42,30 +42,30 @@ export function TaskChoiceCards({
 
   return (
     <div className="mt-3 space-y-2">
-      <p className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <p className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
         Open tasks
       </p>
 
       {tasks.map((task) => (
         <div
           key={task.id}
-          className="rounded-[1.35rem] bg-white p-4 shadow-sm ring-1 ring-slate-200"
+          className="rounded-[1.35rem] bg-white p-4 shadow-sm ring-1 ring-black/5"
         >
-          <h3 className="text-base font-semibold text-slate-950">
+          <h3 className="text-base font-semibold text-zinc-950">
             {task.title}
           </h3>
 
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-sky-50 px-3 py-1 font-medium text-sky-700">
+            <span className="rounded-full bg-pink-50 px-3 py-1 font-medium text-pink-700">
               {task.status || "Todo"}
             </span>
 
-            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+            <span className="rounded-full bg-zinc-100 px-3 py-1 font-medium text-zinc-600">
               {task.priority || "Normal"}
             </span>
 
             {task.due_date ? (
-              <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+              <span className="rounded-full bg-zinc-100 px-3 py-1 font-medium text-zinc-600">
                 Due {task.due_date}
               </span>
             ) : null}
@@ -80,9 +80,9 @@ export function TaskChoiceCards({
           <button
             onClick={() => markDone(task)}
             disabled={loadingId === task.id}
-            className="mt-4 w-full rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-4 w-full rounded-full bg-black px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {loadingId === task.id ? "Updating…" : "Mark done"}
+            {loadingId === task.id ? "Updating\u2026" : "Mark done"}
           </button>
         </div>
       ))}

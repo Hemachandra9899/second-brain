@@ -100,25 +100,25 @@ export function CommandTray({
   if (!items.length) return null;
 
   return (
-    <div className="absolute bottom-[5.5rem] left-4 right-4 z-50 mx-auto max-w-md rounded-[1.5rem] bg-white/95 p-2 shadow-2xl ring-1 ring-slate-200 backdrop-blur-xl">
+    <div className="absolute bottom-[5.5rem] left-4 right-4 z-50 mx-auto max-w-md rounded-[1.5rem] bg-white/95 p-2 shadow-2xl ring-1 ring-black/5 backdrop-blur-xl">
       {items.map((item) => (
         <button
           key={item.label}
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onSelect(item.insert)}
-          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-sky-50 active:scale-[0.99]"
+          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-pink-50 active:scale-[0.99]"
         >
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950">
+            <p className="text-sm font-semibold text-zinc-950">
               {item.label}
             </p>
-            <p className="mt-0.5 truncate text-xs text-slate-500">
+            <p className="mt-0.5 truncate text-xs text-zinc-500">
               {item.description}
             </p>
           </div>
 
-          <span className="ml-3 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+          <span className="ml-3 rounded-full bg-pink-50 px-3 py-1 text-xs font-semibold text-pink-700">
             Use
           </span>
         </button>
