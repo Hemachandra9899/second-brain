@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     notion_oauth_redirect_uri: str = "http://localhost:8000/integrations/notion/callback"
     notion_api_version: str = "2026-03-11"
     notion_tasks_database_id: str | None = None
+    notion_uploads_parent_page_id: str | None = None
 
     openwa_base_url: str | None = None
     openwa_api_key: str | None = None

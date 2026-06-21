@@ -536,6 +536,42 @@ export type InstagramImportResponse = {
   }[];
 };
 
+export type NotionImageUploadResponse = {
+  ok: boolean;
+  notion_page: {
+    id: string;
+    title: string;
+    url: string;
+  };
+  file_upload_id: string;
+};
+
+export async function uploadImageToNotion(input: {
+  file: File;
+  title?: string;
+  caption?: string;
+}) {
+  const form = new FormData();
+  form.append("file", input.file);
+  form.append("title", input.title || input.file.name);
+  if (input.caption) form.append("caption", input.caption);
+
+  const res = await fetch(`${API_URL}/uploads/image/notion`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(),
+    },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Image upload failed");
+  }
+
+  return res.json() as Promise<NotionImageUploadResponse>;
+}
+
 export async function uploadInstagramZip(file: File) {
   const form = new FormData();
   form.append("file", file);

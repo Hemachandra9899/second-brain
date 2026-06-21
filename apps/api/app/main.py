@@ -19,6 +19,7 @@ from app.modules.integrations.notion.notion_router import router as notion_route
 from app.modules.writing.writing_router import router as writing_router
 from app.modules.activity.activity_router import router as activity_router
 from app.modules.brain.brain_router import router as brain_router
+from app.modules.uploads.upload_router import router as upload_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -94,3 +95,4 @@ app.include_router(whatsapp_router, prefix="/integrations/whatsapp", tags=["what
 app.include_router(writing_router, prefix="/writing", tags=["writing"])
 app.include_router(activity_router, prefix="/activity", tags=["activity"])
 app.include_router(brain_router, prefix="/brain", tags=["brain"])
+app.include_router(upload_router, prefix="/uploads", tags=["uploads"])
