@@ -9,3 +9,4 @@ from app.models.notion import NotionConnection
 from app.models.writing import WritingDocument
 from app.models.activity import ActivityEvent
 from app.models.import_job import ImportJob
+from app.models.notion_todo import NotionTodoPage

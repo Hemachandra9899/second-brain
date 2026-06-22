@@ -19,11 +19,14 @@ import {
   TaskResultCard,
 } from "@/components/assistant/ActionCards";
 import { TaskChoiceCards } from "@/components/assistant/TaskChoiceCards";
+import { TodoPageCard } from "@/components/assistant/TodoPageCard";
 import type {
   AssistantResponse,
   BrainAskResponse,
   CreatedTaskCardData,
   NotionPageCardData,
+  NotionTodoPageData,
+  NotionTodoItemData,
   TaskChoice,
   ActivityEvent,
 } from "@/lib/api";
@@ -43,6 +46,8 @@ type Message = {
     type: string;
     preview?: string | null;
   }[];
+  notion_todo_page?: NotionTodoPageData | null;
+  notion_todo_items?: NotionTodoItemData[];
 };
 
 const starterChips = [
@@ -144,6 +149,14 @@ export function AssistantScreen() {
     return "task_choices" in res ? res.task_choices || [] : [];
   }
 
+  function getNotionTodoPage(res: AssistantResponse | BrainAskResponse) {
+    return "notion_todo_page" in res ? res.notion_todo_page || null : null;
+  }
+
+  function getNotionTodoItems(res: AssistantResponse | BrainAskResponse) {
+    return "notion_todo_items" in res ? res.notion_todo_items || [] : [];
+  }
+
   async function sendMessage(text?: string) {
     const content = (text || input).trim();
     if (!content || loading) return;
@@ -166,6 +179,8 @@ export function AssistantScreen() {
           created_task: getCreatedTask(res),
           task_choices: getTaskChoices(res),
           sources: res.sources || [],
+          notion_todo_page: getNotionTodoPage(res),
+          notion_todo_items: getNotionTodoItems(res),
         },
       ]);
     } catch {
@@ -339,6 +354,13 @@ export function AssistantScreen() {
 
                     {message.notion_page ? (
                       <NotionPageCard page={message.notion_page} />
+                    ) : null}
+
+                    {message.notion_todo_page && message.notion_todo_items ? (
+                      <TodoPageCard
+                        page={message.notion_todo_page}
+                        items={message.notion_todo_items}
+                      />
                     ) : null}
 
                     <SourceCards sources={message.sources} />

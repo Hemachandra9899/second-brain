@@ -2,7 +2,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import User, Task, NotionConnection
+from app.models import User, Task, NotionConnection, NotionTodoPage
 from app.modules.chat.chat_schema import ChatRequest
 from app.services.llm_nvidia import ask_llm, ask_fast
 from app.modules.chat.chat_intent_service import classify_chat_intent
@@ -16,6 +16,21 @@ from app.modules.integrations.notion.notion_service import (
     search_relevant_notion_pages,
     retrieve_page_blocks,
     blocks_to_text,
+)
+from app.modules.integrations.notion.notion_todo_service import (
+    _get_access_token,
+    create_notion_todo_page,
+    create_todo_page_locally,
+    create_todo_task_locally,
+    get_todos_from_notion_page,
+    update_notion_todo_block,
+    update_notion_page_title,
+    append_todos_to_notion_page,
+)
+from app.modules.tasks.date_utils import (
+    resolve_task_date,
+    should_filter_created_at,
+    utc_day_range_for_created_at,
 )
 from app.modules.activity.activity_service import create_activity_event
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge
@@ -37,6 +52,24 @@ def run_chat(
             "intent": intent,
         }
 
+    if intent["intent"] == "create_notion_todo_page":
+        return _handle_create_notion_todo_page(db, message, intent, current_user)
+
+    if intent["intent"] == "show_notion_todo_page":
+        return _handle_show_notion_todo_page(db, message, intent, current_user)
+
+    if intent["intent"] == "check_notion_todo":
+        return _handle_check_notion_todo(db, message, intent, current_user)
+
+    if intent["intent"] == "rename_notion_todo_page":
+        return _handle_rename_notion_todo_page(db, message, intent, current_user)
+
+    if intent["intent"] == "add_todos_to_notion_page":
+        return _handle_add_todos_to_notion_page(db, message, intent, current_user)
+
+    if intent["intent"] == "connect_existing_notion_page":
+        return _handle_connect_existing_page(db, message, intent, current_user)
+
     if intent["intent"] == "create_notion_task":
         return _handle_create_notion_task(db, message, intent, current_user)
 
@@ -49,7 +82,13 @@ def run_chat(
         return _handle_create_task(db, message, intent, current_user)
 
     if intent["intent"] in ("query_today_tasks", "query_notion_tasks"):
-        return _handle_task_query(db, message, intent, current_user)
+        return _handle_task_query(
+            db=db,
+            message=message,
+            intent=intent,
+            current_user=current_user,
+            timezone=payload.timezone,
+        )
 
     if intent["intent"] == "capture_note":
         return _handle_capture_note(db, message, intent, current_user)
@@ -118,6 +157,7 @@ def _handle_create_task(
     message: str,
     intent: dict,
     current_user: User | None,
+    timezone: str | None = "UTC",
 ) -> dict:
     if not current_user:
         return {
@@ -128,6 +168,13 @@ def _handle_create_task(
     title = intent.get("title") or message[:80]
     description = intent.get("description") or message
 
+    due_date = intent.get("due_date")
+    if not due_date:
+        try:
+            due_date = resolve_task_date(message, timezone).isoformat()
+        except Exception:
+            due_date = None
+
     task = Task(
         id=str(uuid4()),
         user_id=current_user.id,
@@ -135,7 +182,7 @@ def _handle_create_task(
         description=description,
         status="Todo",
         priority=intent.get("priority") or "Normal",
-        due_date=intent.get("due_date"),
+        due_date=due_date,
         source="chat",
     )
 
@@ -160,6 +207,7 @@ def _handle_create_notion_task(
     message: str,
     intent: dict,
     current_user: User | None,
+    timezone: str | None = "UTC",
 ) -> dict:
     if not current_user:
         return {
@@ -170,6 +218,11 @@ def _handle_create_notion_task(
     title = intent.get("title") or message[:80]
     description = intent.get("description") or message
     due_date = intent.get("due_date")
+    if not due_date:
+        try:
+            due_date = resolve_task_date(message, timezone).isoformat()
+        except Exception:
+            due_date = None
     priority = intent.get("priority") or "Normal"
 
     task = Task(
@@ -323,6 +376,7 @@ def _handle_task_query(
     message: str,
     intent: dict,
     current_user: User | None,
+    timezone: str | None = "UTC",
 ) -> dict:
     if not current_user:
         return {
@@ -330,24 +384,56 @@ def _handle_task_query(
             "intent": intent,
         }
 
-    tasks = (
-        db.query(Task)
-        .filter(Task.user_id == current_user.id)
-        .order_by(Task.created_at.desc())
-        .limit(10)
-        .all()
-    )
+    target_date = resolve_task_date(message, timezone)
+    filter_created = should_filter_created_at(message)
+
+    query = db.query(Task).filter(Task.user_id == current_user.id)
+
+    if filter_created:
+        start_utc, end_utc = utc_day_range_for_created_at(target_date, timezone)
+        query = query.filter(Task.created_at >= start_utc).filter(
+            Task.created_at < end_utc
+        )
+        label = f"tasks saved on {target_date.isoformat()}"
+    else:
+        query = query.filter(Task.due_date == target_date.isoformat())
+        label = f"tasks due on {target_date.isoformat()}"
+
+    tasks = query.order_by(Task.created_at.desc()).limit(50).all()
 
     if not tasks:
         return {
-            "answer": "You have no tasks yet. Want me to create one?",
+            "answer": f"I found no {label}.",
             "intent": intent,
+            "tasks": [],
+            "date": target_date.isoformat(),
+            "date_filter_type": "created_at" if filter_created else "due_date",
         }
 
-    lines = [f"- {t.title} ({t.status or 'Todo'})" for t in tasks]
+    lines = [
+        f"- {'✅' if t.status == 'Done' else '☐'} {t.title}"
+        + (f" ({t.priority})" if t.priority else "")
+        for t in tasks
+    ]
+
     return {
-        "answer": "Here are your recent tasks:\n" + "\n".join(lines),
+        "answer": f"Here are your {label}:\n" + "\n".join(lines),
         "intent": intent,
+        "tasks": [
+            {
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "status": task.status,
+                "priority": task.priority,
+                "due_date": task.due_date,
+                "created_at": task.created_at.isoformat() if task.created_at else None,
+                "notion_page_id": task.notion_page_id,
+            }
+            for task in tasks
+        ],
+        "date": target_date.isoformat(),
+        "date_filter_type": "created_at" if filter_created else "due_date",
     }
 
 
@@ -508,4 +594,359 @@ def _handle_complete_task_request(
             }
             for task in tasks
         ],
+    }
+
+
+def _handle_create_notion_todo_page(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first so I can create a todo page.", "intent": intent}
+
+    title = intent.get("title") or "Todo List"
+
+    lines = [line.strip().lstrip("- ").lstrip("* ").lstrip("0123456789.") for line in message.split("\n") if line.strip() and not line.strip().lower().startswith(("create ", "/create"))]
+    todos = [l for l in lines if l and not l.startswith(("due", "priority", "status"))]
+
+    if len(todos) <= 1:
+        todos = [message[:80]]
+
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        return {"answer": "Connect Notion first so I can create a todo page there.", "intent": intent}
+
+    data_source_id = conn.default_data_source_id
+    if not data_source_id:
+        return {"answer": "Select a default Notion database in your profile first.", "intent": intent, "task_id": None}
+
+    access_token = get_decrypted_token(conn)
+
+    try:
+        notion_result = create_notion_todo_page(
+            access_token=access_token,
+            title=title,
+            todos=todos,
+            data_source_id=data_source_id,
+        )
+    except Exception as exc:
+        return {"answer": f"I could not create the Notion page. Reason: {str(exc)}", "intent": intent}
+
+    page = create_todo_page_locally(
+        db=db,
+        current_user=current_user,
+        title=notion_result["title"],
+        notion_page_id=notion_result["page_id"],
+        notion_page_url=notion_result.get("page_url"),
+        data_source_id=data_source_id,
+    )
+
+    tasks = []
+    for todo in notion_result["todos"]:
+        task = create_todo_task_locally(
+            db=db,
+            current_user=current_user,
+            notion_page_id=page.notion_page_id,
+            title=todo["text"],
+            notion_block_id=todo["block_id"],
+        )
+        tasks.append(task)
+
+    try:
+        create_activity_event(
+            db=db,
+            event_type="notion_todo_page_created",
+            title=title,
+            description=f"Created todo page with {len(todos)} items",
+            source_type="notion",
+            source_id=notion_result["page_id"],
+            url=notion_result.get("page_url"),
+            metadata={"todo_page_id": page.id},
+            current_user=current_user,
+        )
+    except Exception:
+        pass
+
+    return {
+        "answer": f"I created '{title}' in Notion with {len(todos)} items.",
+        "intent": intent,
+        "notion_todo_page": {
+            "id": page.id,
+            "title": page.title,
+            "notion_page_id": page.notion_page_id,
+            "url": page.notion_page_url,
+        },
+        "notion_todo_items": [
+            {
+                "id": task.id,
+                "title": task.title,
+                "checked": False,
+                "notion_block_id": task.notion_block_id,
+            }
+            for task in tasks
+        ],
+    }
+
+
+def _handle_show_notion_todo_page(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first so I can show your todo pages.", "intent": intent}
+
+    title_hint = intent.get("title") or ""
+
+    query = db.query(NotionTodoPage).filter(NotionTodoPage.user_id == current_user.id)
+    if title_hint:
+        query = query.filter(NotionTodoPage.title.ilike(f"%{title_hint}%"))
+    page = query.order_by(NotionTodoPage.updated_at.desc()).first()
+
+    if not page:
+        if title_hint:
+            return {"answer": f"I could not find a todo page named '{title_hint}'.", "intent": intent}
+        return {"answer": "You have no todo pages yet. Create one with 'create todo list ...'", "intent": intent}
+
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        return {"answer": "Connect Notion to fetch the latest todos.", "intent": intent}
+
+    access_token = get_decrypted_token(conn)
+
+    try:
+        todos = get_todos_from_notion_page(
+            access_token=access_token,
+            page_id=page.notion_page_id,
+        )
+    except Exception as exc:
+        return {"answer": f"Could not fetch todos from Notion. Reason: {str(exc)}", "intent": intent}
+
+    lines = "\n".join(f"{'☑' if t['checked'] else '☐'} {t['text']}" for t in todos)
+    return {
+        "answer": f"**{page.title}**\n\n{lines}",
+        "intent": intent,
+        "notion_todo_page": {
+            "id": page.id,
+            "title": page.title,
+            "notion_page_id": page.notion_page_id,
+            "url": page.notion_page_url,
+        },
+        "notion_todo_items": todos,
+    }
+
+
+def _handle_check_notion_todo(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first.", "intent": intent}
+
+    text = message.lower().replace("mark", "").replace("done", "").replace("complete", "").replace("checked", "").strip()
+    task_title = text.split(" in ")[0].strip() if " in " in text else text
+    page_name = text.split(" in ")[-1].strip() if " in " in text else ""
+
+    page_query = db.query(NotionTodoPage).filter(NotionTodoPage.user_id == current_user.id)
+    if page_name:
+        page_query = page_query.filter(NotionTodoPage.title.ilike(f"%{page_name}%"))
+    page = page_query.first()
+
+    if not page:
+        return {"answer": f"Could not find todo page '{page_name}'.", "intent": intent}
+
+    task = (
+        db.query(Task)
+        .filter(
+            Task.notion_block_id.isnot(None),
+            Task.notion_page_id == page.id,
+            Task.title.ilike(f"%{task_title}%"),
+            Task.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not task or not task.notion_block_id:
+        return {"answer": f"Could not find '{task_title}' in {page.title}.", "intent": intent}
+
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        return {"answer": "Connect Notion to update todos.", "intent": intent}
+
+    access_token = get_decrypted_token(conn)
+
+    try:
+        update_notion_todo_block(
+            access_token=access_token,
+            block_id=task.notion_block_id,
+            checked=True,
+        )
+    except Exception as exc:
+        return {"answer": f"Could not update the todo. Reason: {str(exc)}", "intent": intent}
+
+    task.status = "Done"
+    db.commit()
+
+    return {
+        "answer": f"Marked '{task.title}' as done in {page.title}.",
+        "intent": intent,
+        "checked_block_id": task.notion_block_id,
+    }
+
+
+def _handle_rename_notion_todo_page(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first.", "intent": intent}
+
+    parts = message.lower().split(" to ")
+    old_name_hint = parts[0].replace("rename", "").strip() if len(parts) > 1 else ""
+    new_title = parts[1].strip() if len(parts) > 1 else ""
+
+    if not new_title:
+        return {"answer": "Tell me the new name. For example: rename Weekend Plan to Saturday Plan", "intent": intent}
+
+    page = (
+        db.query(NotionTodoPage)
+        .filter(
+            NotionTodoPage.user_id == current_user.id,
+            NotionTodoPage.title.ilike(f"%{old_name_hint}%"),
+        )
+        .first()
+    )
+
+    if not page:
+        return {"answer": f"Could not find a todo page named '{old_name_hint}'.", "intent": intent}
+
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        return {"answer": "Connect Notion to rename the page.", "intent": intent}
+
+    access_token = get_decrypted_token(conn)
+
+    try:
+        update_notion_page_title(
+            access_token=access_token,
+            page_id=page.notion_page_id,
+            data_source_id=page.data_source_id,
+            new_title=new_title,
+        )
+    except Exception as exc:
+        return {"answer": f"Could not rename the page. Reason: {str(exc)}", "intent": intent}
+
+    page.title = new_title
+    db.commit()
+
+    return {
+        "answer": f"Renamed '{old_name_hint}' to '{new_title}'.",
+        "intent": intent,
+        "notion_todo_page": {
+            "id": page.id,
+            "title": page.title,
+            "notion_page_id": page.notion_page_id,
+            "url": page.notion_page_url,
+        },
+    }
+
+
+def _handle_add_todos_to_notion_page(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first.", "intent": intent}
+
+    lines = [line.strip().lstrip("- ").lstrip("* ").lstrip("0123456789.") for line in message.split("\n")]
+    lines = [l for l in lines if l and not l.lower().startswith(("add ", "put ", "append "))]
+
+    parts = message.lower().split(" to ")
+    page_name = parts[-1].strip() if len(parts) > 1 else ""
+    if not page_name:
+        page_name = lines[-1] if lines else ""
+        todos = lines[:-1] if len(lines) > 1 else lines
+    else:
+        todos = lines
+
+    if not todos:
+        return {"answer": "What todos should I add?", "intent": intent}
+
+    page = (
+        db.query(NotionTodoPage)
+        .filter(
+            NotionTodoPage.user_id == current_user.id,
+            NotionTodoPage.title.ilike(f"%{page_name}%"),
+        )
+        .first()
+    )
+
+    if not page:
+        return {"answer": f"Could not find todo page '{page_name}'.", "intent": intent}
+
+    conn = get_notion_connection(db, current_user)
+    if not conn:
+        return {"answer": "Connect Notion to add todos.", "intent": intent}
+
+    access_token = get_decrypted_token(conn)
+
+    try:
+        new_blocks = append_todos_to_notion_page(
+            access_token=access_token,
+            page_id=page.notion_page_id,
+            todos=todos,
+        )
+    except Exception as exc:
+        return {"answer": f"Could not add todos. Reason: {str(exc)}", "intent": intent}
+
+    tasks = []
+    for block in new_blocks:
+        task = create_todo_task_locally(
+            db=db,
+            current_user=current_user,
+            notion_page_id=page.notion_page_id,
+            title=block["text"],
+            notion_block_id=block["block_id"],
+        )
+        tasks.append(task)
+
+    return {
+        "answer": f"Added {len(tasks)} todo(s) to {page.title}.",
+        "intent": intent,
+        "notion_todo_page": {
+            "id": page.id,
+            "title": page.title,
+            "notion_page_id": page.notion_page_id,
+            "url": page.notion_page_url,
+        },
+        "notion_todo_items": [
+            {
+                "id": task.id,
+                "title": task.title,
+                "checked": False,
+                "notion_block_id": task.notion_block_id,
+            }
+            for task in tasks
+        ],
+    }
+
+
+def _handle_connect_existing_page(
+    db: Session,
+    message: str,
+    intent: dict,
+    current_user: User | None,
+) -> dict:
+    return {
+        "answer": "To connect an existing Notion page, use the 'Connect existing page' option in settings, or provide the page URL and database.",
+        "intent": intent,
     }

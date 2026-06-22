@@ -18,5 +18,6 @@ class Task(Base):
     due_date: Mapped[str | None] = mapped_column(String(50), nullable=True)
     source: Mapped[str] = mapped_column(String(50), default="second_brain")
     notion_page_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    notion_block_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

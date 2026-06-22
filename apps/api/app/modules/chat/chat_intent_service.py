@@ -28,6 +28,72 @@ def _rule_based_intent(message: str) -> dict | None:
             "needs_graphrag": False,
         }
 
+    if re.search(r"(^|\s)(/create\s+.*todo\s+list|create\s+(a\s+)?todo\s+list)", text):
+        return {
+            "intent": "create_notion_todo_page",
+            "title": _extract_todo_list_title(text),
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"(^|\s)(show|get|fetch|open)\s+.*(todo|checklist|plan)\s", text):
+        return {
+            "intent": "show_notion_todo_page",
+            "title": _extract_todo_list_title(text),
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"(mark|check|uncheck|toggle)\s+.*\s+(done|complete|checked)\s+.*\s+(in|on)\s+", text):
+        return {
+            "intent": "check_notion_todo",
+            "title": text,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"(rename|change|update)\s+.*\s+(to|into)\s+", text):
+        return {
+            "intent": "rename_notion_todo_page",
+            "title": text,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"(add|append|put)\s+.*\s+(to|in)\s+.*\s+(todo|plan|list|checklist)", text):
+        return {
+            "intent": "add_todos_to_notion_page",
+            "title": text,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"connect\s+(existing\s+)?notion\s+(todo\s+)?page", text):
+        return {
+            "intent": "connect_existing_notion_page",
+            "title": text,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": True,
+            "needs_graphrag": False,
+        }
+
     if text.startswith("/notion") or "@notion" in text:
         if re.search(r"(what|show|list|get|today|all)", text):
             return {
@@ -107,6 +173,21 @@ def _rule_based_intent(message: str) -> dict | None:
     return None
 
 
+def _extract_todo_list_title(text: str) -> str | None:
+    patterns = [
+        r"(?:create\s+(?:a\s+)?todo\s+list\s+)(.+)",
+        r"(?:show\s+)(.+)(?:\s+todos|\s+plan|\s+checklist|\s+list)",
+        r"(?:rename\s+)(.+?)(?:\s+to\s+)",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            raw = m.group(1).strip().rstrip(":. ")
+            if raw:
+                return raw[:120]
+    return None
+
+
 def _extract_title_after_slash(text: str, command: str) -> str | None:
     pattern = rf"^/{command}\s+(create|add|make|new)?\s*(.*)"
     m = re.match(pattern, text)
@@ -162,7 +243,7 @@ Classify this Second Brain chat message.
 
 Return strict JSON only:
 {{
-  "intent": "greeting|create_task|create_notion_task|query_today_tasks|query_notion_tasks|complete_task_request|capture_note|knowledge_question|general_chat",
+  "intent": "greeting|create_task|create_notion_task|create_notion_todo_page|show_notion_todo_page|add_todos_to_notion_page|check_notion_todo|rename_notion_todo_page|connect_existing_notion_page|query_today_tasks|query_notion_tasks|complete_task_request|capture_note|knowledge_question|general_chat",
   "title": "short title or null",
   "description": "description or null",
   "priority": "Low|Normal|High",

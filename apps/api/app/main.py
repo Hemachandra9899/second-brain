@@ -16,6 +16,7 @@ from app.modules.projects.project_router import router as project_router
 from app.modules.demo.demo_router import router as demo_router
 from app.modules.integrations.whatsapp.whatsapp_router import router as whatsapp_router
 from app.modules.integrations.notion.notion_router import router as notion_router
+from app.modules.integrations.notion.notion_todo_router import router as notion_todo_router
 from app.modules.writing.writing_router import router as writing_router
 from app.modules.activity.activity_router import router as activity_router
 from app.modules.brain.brain_router import router as brain_router
@@ -92,6 +93,7 @@ app.include_router(memory_router, prefix="/memory", tags=["memory"])
 app.include_router(project_router, prefix="/projects", tags=["projects"])
 app.include_router(demo_router, prefix="/demo", tags=["demo"])
 app.include_router(notion_router, prefix="/integrations/notion", tags=["notion"])
+app.include_router(notion_todo_router, prefix="/integrations/notion", tags=["notion"])
 app.include_router(whatsapp_router, prefix="/integrations/whatsapp", tags=["whatsapp"])
 app.include_router(writing_router, prefix="/writing", tags=["writing"])
 app.include_router(activity_router, prefix="/activity", tags=["activity"])

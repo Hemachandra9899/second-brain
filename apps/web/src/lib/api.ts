@@ -189,14 +189,25 @@ export type AssistantResponse = {
     url?: string;
     type: "notion" | "memory" | "task" | "writing";
   }[];
+  notion_todo_page?: NotionTodoPageData | null;
+  notion_todo_items?: NotionTodoItemData[];
+  checked_block_id?: string;
 };
 
+function getUserTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
 export async function askAssistant(message: string) {
-  return apiPost<AssistantResponse>("/chat", { message });
+  return apiPost<AssistantResponse>("/chat", { message, timezone: getUserTimezone() });
 }
 
 export async function chat(message: string) {
-  return apiPost<AssistantResponse>("/chat", { message });
+  return apiPost<AssistantResponse>("/chat", { message, timezone: getUserTimezone() });
 }
 
 export async function askKnowledge(query: string) {
@@ -514,6 +525,7 @@ export async function askBrain(query: string, source_hint?: string) {
   return apiPost<BrainAskResponse>("/brain/ask", {
     query,
     source_hint,
+    timezone: getUserTimezone(),
   });
 }
 
@@ -609,4 +621,99 @@ export async function uploadInstagramZip(file: File) {
 
 export async function getInstagramImportJob(jobId: string) {
   return apiGet<InstagramImportJob>(`/imports/instagram/jobs/${jobId}`);
+}
+
+// --- Notion Todo Pages ---
+
+export type NotionTodoPageData = {
+  id: string;
+  title: string;
+  notion_page_id: string;
+  url?: string | null;
+};
+
+export type NotionTodoItemData = {
+  id: string;
+  title: string;
+  checked: boolean;
+  notion_block_id: string;
+};
+
+export type CreateTodoPageRequest = {
+  title: string;
+  todos: string[];
+  data_source_id: string;
+};
+
+export type CreateTodoPageResponse = {
+  ok: boolean;
+  page: NotionTodoPageData;
+  todos: NotionTodoItemData[];
+};
+
+export async function createNotionTodoPage(
+  input: CreateTodoPageRequest
+) {
+  return apiPost<CreateTodoPageResponse>(
+    "/integrations/notion/todo-pages",
+    input
+  );
+}
+
+export async function getNotionTodoPages() {
+  return apiGet<{ ok: boolean; pages: NotionTodoPageData[] }>(
+    "/integrations/notion/todo-pages"
+  );
+}
+
+export async function getNotionTodoPage(id: string) {
+  return apiGet<{
+    ok: boolean;
+    page: NotionTodoPageData;
+    todos: NotionTodoItemData[];
+  }>(`/integrations/notion/todo-pages/${id}`);
+}
+
+export async function addTodosToNotionPage(
+  pageId: string,
+  todos: string[]
+) {
+  return apiPost<{ ok: boolean; todos: NotionTodoItemData[] }>(
+    `/integrations/notion/todo-pages/${pageId}/todos`,
+    { todos }
+  );
+}
+
+export async function checkNotionTodo(
+  pageId: string,
+  blockId: string,
+  checked: boolean
+) {
+  return apiPatch<{ ok: boolean; checked: boolean }>(
+    `/integrations/notion/todo-pages/${pageId}/todos/${blockId}`,
+    { checked }
+  );
+}
+
+export async function renameNotionTodoPage(
+  pageId: string,
+  title: string
+) {
+  return apiPatch<{ ok: boolean; page: NotionTodoPageData }>(
+    `/integrations/notion/todo-pages/${pageId}/title`,
+    { title }
+  );
+}
+
+export async function connectExistingNotionPage(
+  input: {
+    notion_page_id: string;
+    title: string;
+    data_source_id: string;
+  }
+) {
+  return apiPost<CreateTodoPageResponse>(
+    "/integrations/notion/todo-pages/connect",
+    input
+  );
 }

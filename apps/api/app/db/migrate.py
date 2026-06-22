@@ -269,4 +269,32 @@ def run_migrations():
             ))
             print("Created index: idx_activity_events_event_type")
 
+    with engine.begin() as conn:
+        if "notion_todo_pages" not in existing_tables:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS notion_todo_pages (
+                    id VARCHAR PRIMARY KEY,
+                    user_id VARCHAR REFERENCES users(id),
+                    title VARCHAR(500) NOT NULL,
+                    notion_page_id VARCHAR(255) NOT NULL,
+                    notion_page_url TEXT,
+                    data_source_id VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            print("Created table: notion_todo_pages")
+
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_notion_todo_pages_user_id ON notion_todo_pages(user_id)"
+            ))
+            print("Created index: idx_notion_todo_pages_user_id")
+
+    with engine.begin() as conn:
+        if "tasks" in existing_tables:
+            existing_columns_tasks = [col["name"] for col in inspector.get_columns("tasks")]
+            if "notion_block_id" not in existing_columns_tasks:
+                conn.execute(text("ALTER TABLE tasks ADD COLUMN notion_block_id VARCHAR(255)"))
+                print("Added column: tasks.notion_block_id")
+
     print("Migration complete")

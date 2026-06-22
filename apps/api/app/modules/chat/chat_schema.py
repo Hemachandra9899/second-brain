@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class ChatRequest(BaseModel):
     message: str
     recent_context: str | None = None
+    timezone: str | None = "UTC"
 
 
 class ChatResponse(BaseModel):
