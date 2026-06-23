@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getRecentActivity, type ActivityEvent } from "@/lib/api";
 import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
+import { DreamModeCard } from "@/components/home/DreamModeCard";
 
 function formatTime(value?: string | null) {
   if (!value) return "Now";
@@ -26,6 +27,7 @@ function labelFor(event: ActivityEvent) {
   if (event.event_type === "writing_saved") return "Writing";
   if (event.event_type === "tasks_extracted") return "Tasks";
   if (event.event_type === "memory_card_created") return "Memory";
+  if (event.event_type === "dream_created") return "Dream";
   if (event.event_type === "instagram_imported") return "Instagram";
   return "Activity";
 }
@@ -209,7 +211,7 @@ export function HomeMobile() {
   }, []);
 
   const savedEvents = events.filter((event) =>
-    ["notion_page_created", "writing_saved", "memory_card_created", "instagram_imported"].includes(
+    ["notion_page_created", "writing_saved", "memory_card_created", "dream_created", "instagram_imported"].includes(
       event.event_type
     )
   );
@@ -263,6 +265,8 @@ export function HomeMobile() {
             href="/"
           />
         </section>
+
+        <DreamModeCard />
 
         <SavedInsightsPreview events={savedEvents} />
 

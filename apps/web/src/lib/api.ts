@@ -717,3 +717,39 @@ export async function connectExistingNotionPage(
     input
   );
 }
+
+// --- Dream Mode ---
+
+export type DreamSuggestedAction = {
+  title: string;
+  reason?: string | null;
+  action_type?: string | null;
+  source_type?: string | null;
+  source_id?: string | null;
+};
+
+export type Dream = {
+  id: string;
+  dream_date: string;
+  dream_type: "nightly" | "think" | "weekly" | string;
+  title: string;
+  summary: string;
+  patterns: string[];
+  forgotten_items: string[];
+  suggested_actions: DreamSuggestedAction[];
+  tomorrow_plan: string[];
+  related_ids: Record<string, string[]>;
+  created_at?: string | null;
+};
+
+export async function runDream(mode: "nightly" | "think" | "weekly" = "nightly") {
+  return apiPost<Dream>("/dreams/run", { mode });
+}
+
+export async function getLatestDream() {
+  return apiGet<{ dream: Dream | null }>("/dreams/latest");
+}
+
+export async function getDreams() {
+  return apiGet<{ dreams: Dream[] }>("/dreams");
+}
