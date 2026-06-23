@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Task, User, WritingDocument
 from app.modules.activity.activity_service import create_activity_event
+from app.modules.brain.local_brain_indexer import index_writing_to_local_brain
 from app.modules.knowledge.knowledge_service import index_knowledge_item
 from app.services.llm_nvidia import ask_json_fast
 
@@ -160,6 +161,11 @@ def create_writing_document(
             current_user=current_user,
             user_id=doc.user_id,
         )
+    except Exception:
+        pass
+
+    try:
+        index_writing_to_local_brain(db=db, doc=doc)
     except Exception:
         pass
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models import User, NotionTodoPage, Task
+from app.modules.brain.local_brain_indexer import index_notion_todo_page_to_local_brain
 from app.modules.integrations.notion.notion_service import (
     _build_notion_headers,
     _plain_text_block,
@@ -264,6 +265,12 @@ def create_todo_page_locally(
     db.add(page)
     db.commit()
     db.refresh(page)
+
+    try:
+        index_notion_todo_page_to_local_brain(db=db, page=page)
+    except Exception:
+        pass
+
     return page
 
 

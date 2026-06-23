@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.models import ActivityEvent, User
+from app.modules.brain.local_brain_indexer import index_activity_to_local_brain
 
 
 def create_activity_event(
@@ -34,6 +35,11 @@ def create_activity_event(
     db.add(event)
     db.commit()
     db.refresh(event)
+
+    try:
+        index_activity_to_local_brain(db=db, event=event)
+    except Exception:
+        pass
 
     return event
 

@@ -15,6 +15,7 @@ from app.models import (
     WritingDocument,
 )
 from app.modules.activity.activity_service import create_activity_event
+from app.modules.brain.local_brain_indexer import index_dream_to_local_brain
 from app.services.llm_nvidia import ask_deep, ask_json_fast
 
 
@@ -316,6 +317,11 @@ Create a useful Second Brain dream.
     db.add(dream)
     db.commit()
     db.refresh(dream)
+
+    try:
+        index_dream_to_local_brain(db=db, dream=dream)
+    except Exception:
+        pass
 
     try:
         create_activity_event(

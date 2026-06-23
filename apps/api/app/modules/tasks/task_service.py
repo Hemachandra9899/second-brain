@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models import Task, User
 from app.modules.tasks.task_schema import CreateTaskRequest, UpdateTaskRequest
 from app.modules.knowledge.knowledge_service import index_task_as_knowledge, delete_task_from_knowledge
+from app.modules.brain.local_brain_indexer import delete_brain_item, index_task_to_local_brain
 from app.modules.integrations.notion.notion_oauth_service import (
     get_notion_token,
     get_notion_connection,
@@ -100,6 +101,11 @@ def create_task(
     except Exception:
         pass
 
+    try:
+        index_task_to_local_brain(db=db, task=task)
+    except Exception:
+        pass
+
     return serialize_task(task)
 
 
@@ -172,6 +178,11 @@ def update_task(
 
     try:
         index_task_as_knowledge(db=db, task=task)
+    except Exception:
+        pass
+
+    try:
+        index_task_to_local_brain(db=db, task=task)
     except Exception:
         pass
 
@@ -277,6 +288,11 @@ def complete_task_and_sync_to_notion(
     except Exception:
         pass
 
+    try:
+        index_task_to_local_brain(db=db, task=task)
+    except Exception:
+        pass
+
     return {
         "ok": True,
         "task": serialize_task(task),
@@ -309,6 +325,16 @@ def delete_task(
 
     try:
         delete_task_from_knowledge(db=db, task_id=task.id)
+    except Exception:
+        pass
+
+    try:
+        delete_brain_item(
+            db,
+            user_id=task.user_id,
+            source_type="task",
+            source_id=task.id,
+        )
     except Exception:
         pass
 
