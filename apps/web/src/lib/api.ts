@@ -267,20 +267,74 @@ export async function captureAnything(text: string) {
   return apiPost<CaptureResponse>("/capture", { text });
 }
 
+export type BriefTask = {
+  id: string;
+  title: string;
+  description?: string | null;
+  status?: string | null;
+  priority?: string | null;
+  due_date?: string | null;
+  source?: string | null;
+  notion_page_id?: string | null;
+  notion_block_id?: string | null;
+  created_at?: string | null;
+};
+
 export type TodayBrief = {
   greeting: string;
+  today: string;
+  yesterday?: string;
+  tomorrow?: string;
   summary: string;
-  priorities: {
+  counts: {
+    today_tasks: number;
+    overdue_tasks: number;
+    unfinished_yesterday: number;
+    notion_todos: number;
+    recent_memories?: number;
+    recent_activity?: number;
+  };
+  today_tasks: BriefTask[];
+  overdue_tasks: BriefTask[];
+  unfinished_yesterday: BriefTask[];
+  notion_todos: BriefTask[];
+  notion_pages?: {
+    id: string;
     title: string;
-    reason: string;
-    source_type: string;
+    notion_page_id: string;
+    notion_page_url?: string | null;
   }[];
-  mood_note: string;
-  suggested_next_action: string;
+  recent_memories?: {
+    id: string;
+    title: string;
+    summary: string;
+    tags?: string | null;
+    created_at?: string | null;
+  }[];
+  recent_activity?: {
+    id: string;
+    event_type: string;
+    title: string;
+    description?: string | null;
+    source_type?: string | null;
+    source_id?: string | null;
+    url?: string | null;
+    created_at?: string | null;
+  }[];
+  latest_dream?: Dream | null;
+  suggested_next_action: {
+    title: string;
+    reason?: string | null;
+    action_type: string;
+    source_type?: string | null;
+    source_id?: string | null;
+    dream_id?: string | null;
+  };
 };
 
 export async function getTodayBrief() {
-  return apiGet<TodayBrief>("/brief/today");
+  const timezone = encodeURIComponent(getUserTimezone());
+  return apiGet<TodayBrief>(`/brief/today?timezone=${timezone}`);
 }
 
 export async function deleteKnowledgeItem(id: string) {

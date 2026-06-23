@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getRecentActivity, type ActivityEvent } from "@/lib/api";
 import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
 import { DreamModeCard } from "@/components/home/DreamModeCard";
+import { DailyCommandCenter } from "@/components/home/DailyCommandCenter";
 
 function formatTime(value?: string | null) {
   if (!value) return "Now";
@@ -237,6 +238,8 @@ export function HomeMobile() {
             {'\u2726'}
           </Link>
         </header>
+
+        <DailyCommandCenter />
 
         <QuickActions />
 

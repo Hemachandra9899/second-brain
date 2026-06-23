@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
@@ -11,10 +11,12 @@ router = APIRouter()
 
 @router.get("/today")
 def today_brief(
+    timezone: str = Query(default="UTC"),
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_current_user),
 ):
     return get_today_brief(
         db=db,
         user_id=current_user.id if current_user else None,
+        timezone=timezone,
     )
