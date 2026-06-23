@@ -9,6 +9,7 @@ import { BrainMapCard } from "@/components/home/BrainMapCard";
 import { LocalBrainCard } from "@/components/home/LocalBrainCard";
 import { LocalBrainGraphCard } from "@/components/home/LocalBrainGraphCard";
 import { BrainActionsCard } from "@/components/home/BrainActionsCard";
+import { BrainProjectSuggestionsCard } from "@/components/home/BrainProjectSuggestionsCard";
 import { DailyCommandCenter } from "@/components/home/DailyCommandCenter";
 
 function formatTime(value?: string | null) {
@@ -250,6 +251,8 @@ export function HomeMobile() {
         <LocalBrainGraphCard />
 
         <BrainActionsCard />
+
+        <BrainProjectSuggestionsCard />
 
         <QuickActions />
 

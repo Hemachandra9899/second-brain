@@ -18,6 +18,10 @@ from app.modules.brain.brain_action_service import (
     accept_brain_action,
     suggest_brain_actions,
 )
+from app.modules.brain.brain_project_service import (
+    accept_project_suggestion,
+    suggest_projects_from_brain,
+)
 from app.modules.brain.brain_schema import BrainAskRequest
 from app.modules.brain.brain_service import ask_brain
 from app.modules.brain.brain_relationship_service import (
@@ -43,6 +47,10 @@ class LocalBrainThinkRequest(BaseModel):
 
 class BrainActionAcceptRequest(BaseModel):
     action: dict[str, Any]
+
+
+class ProjectSuggestionAcceptRequest(BaseModel):
+    suggestion: dict[str, Any]
 
 
 def _preview(text: str | None, n: int = 260) -> str:
@@ -331,6 +339,30 @@ def accept_local_brain_action(
         db=db,
         current_user=current_user,
         action=payload.action,
+    )
+
+
+@router.get("/local/project-suggestions")
+def get_project_suggestions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return suggest_projects_from_brain(
+        db=db,
+        current_user=current_user,
+    )
+
+
+@router.post("/local/project-suggestions/accept")
+def accept_project_suggestion_endpoint(
+    payload: ProjectSuggestionAcceptRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return accept_project_suggestion(
+        db=db,
+        current_user=current_user,
+        suggestion=payload.suggestion,
     )
 
 

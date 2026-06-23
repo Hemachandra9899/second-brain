@@ -1015,3 +1015,50 @@ export async function acceptBrainAction(action: BrainAction) {
     action,
   });
 }
+
+// --- Brain Project Builder ---
+
+export type BrainProjectSuggestion = {
+  title: string;
+  description: string;
+  item_ids: string[];
+  task_ids: string[];
+  source_types: string[];
+  items: {
+    id: string;
+    source_type: string;
+    source_id: string;
+    title: string;
+    preview?: string | null;
+  }[];
+};
+
+export async function getBrainProjectSuggestions() {
+  return apiGet<{
+    suggestions: BrainProjectSuggestion[];
+    count: number;
+  }>("/brain/local/project-suggestions");
+}
+
+export async function acceptBrainProjectSuggestion(
+  suggestion: BrainProjectSuggestion
+) {
+  return apiPost<{
+    ok: boolean;
+    message: string;
+    project: {
+      id: string;
+      name: string;
+      description?: string | null;
+      status: string;
+    };
+    linked_tasks: {
+      id: string;
+      title: string;
+      status?: string | null;
+      due_date?: string | null;
+    }[];
+  }>("/brain/local/project-suggestions/accept", {
+    suggestion,
+  });
+}
