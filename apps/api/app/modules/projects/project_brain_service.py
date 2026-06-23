@@ -167,7 +167,10 @@ def get_project_brain(
 
 
 import json
+from datetime import date
+from uuid import uuid4
 
+from app.modules.brain.local_brain_indexer import index_task_to_local_brain
 from app.services.llm_nvidia import ask_deep
 
 
@@ -265,4 +268,87 @@ Return:
         "sources": sources[:12],
         "gaps": gaps,
         "next_action": brain["next_action"],
+    }
+
+
+def apply_project_brain_action(
+    db: Session,
+    *,
+    current_user: User,
+    project_id: str,
+    action: dict,
+) -> dict:
+    brain = get_project_brain(
+        db=db,
+        current_user=current_user,
+        project_id=project_id,
+    )
+
+    action_type = action.get("action_type")
+    source_id = action.get("source_id")
+    title = action.get("title") or brain["next_action"]["title"]
+    reason = action.get("reason") or brain["next_action"]["reason"]
+
+    if action_type == "open_task" and source_id:
+        task = (
+            db.query(Task)
+            .filter(Task.user_id == current_user.id)
+            .filter(Task.project_id == project_id)
+            .filter(Task.id == source_id)
+            .first()
+        )
+
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        task.due_date = date.today().isoformat()
+        db.commit()
+        db.refresh(task)
+
+        try:
+            index_task_to_local_brain(db=db, task=task)
+        except Exception:
+            pass
+
+        return {
+            "ok": True,
+            "message": "Moved project task to today.",
+            "task": {
+                "id": task.id,
+                "title": task.title,
+                "status": task.status,
+                "due_date": task.due_date,
+            },
+        }
+
+    task = Task(
+        id=str(uuid4()),
+        user_id=current_user.id,
+        project_id=project_id,
+        title=title,
+        description=reason,
+        status="Todo",
+        priority="Normal",
+        due_date=date.today().isoformat(),
+        source="project_brain",
+    )
+
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+
+    try:
+        index_task_to_local_brain(db=db, task=task)
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "message": "Created project task.",
+        "task": {
+            "id": task.id,
+            "title": task.title,
+            "status": task.status,
+            "due_date": task.due_date,
+        },
     }

@@ -1144,3 +1144,26 @@ export async function thinkProjectBrain(projectId: string, query: string) {
     query,
   });
 }
+
+export async function applyProjectBrainAction(
+  projectId: string,
+  action: {
+    title: string;
+    reason: string;
+    action_type: string;
+    source_id?: string | null;
+  }
+) {
+  return apiPost<{
+    ok: boolean;
+    message: string;
+    task?: {
+      id: string;
+      title: string;
+      status?: string | null;
+      due_date?: string | null;
+    };
+  }>(`/projects/${projectId}/brain/action`, {
+    action,
+  });
+}

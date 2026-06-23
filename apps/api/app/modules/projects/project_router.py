@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -7,6 +9,7 @@ from app.db.session import get_db
 from app.models import User
 from app.modules.projects.project_schema import CreateProjectRequest, UpdateProjectRequest, CreateGoalRequest, UpdateGoalRequest
 from app.modules.projects.project_brain_service import (
+    apply_project_brain_action,
     get_project_brain,
     think_project_brain,
 )
@@ -144,6 +147,25 @@ def project_brain_think(
         current_user=current_user,
         project_id=project_id,
         query=payload.query,
+    )
+
+
+class ProjectActionRequest(BaseModel):
+    action: dict[str, Any]
+
+
+@router.post("/{project_id}/brain/action")
+def project_brain_action(
+    project_id: str,
+    payload: ProjectActionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return apply_project_brain_action(
+        db=db,
+        current_user=current_user,
+        project_id=project_id,
+        action=payload.action,
     )
 
 
