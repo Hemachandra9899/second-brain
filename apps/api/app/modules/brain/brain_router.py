@@ -14,6 +14,7 @@ from app.models import (
     User,
     WritingDocument,
 )
+from app.modules.brain.brain_capture_service import capture_to_brain
 from app.modules.brain.brain_timeline_service import get_brain_timeline
 from app.modules.brain.brain_action_service import (
     accept_brain_action,
@@ -52,6 +53,10 @@ class BrainActionAcceptRequest(BaseModel):
 
 class ProjectSuggestionAcceptRequest(BaseModel):
     suggestion: dict[str, Any]
+
+
+class BrainCaptureRequest(BaseModel):
+    text: str
 
 
 def _preview(text: str | None, n: int = 260) -> str:
@@ -375,6 +380,19 @@ def accept_project_suggestion_endpoint(
         db=db,
         current_user=current_user,
         suggestion=payload.suggestion,
+    )
+
+
+@router.post("/local/capture")
+def local_brain_capture(
+    payload: BrainCaptureRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return capture_to_brain(
+        db=db,
+        current_user=current_user,
+        text=payload.text,
     )
 
 

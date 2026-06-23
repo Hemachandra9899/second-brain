@@ -1063,6 +1063,22 @@ export async function acceptBrainProjectSuggestion(
   });
 }
 
+// --- Brain Capture ---
+
+export async function captureToBrain(text: string) {
+  return apiPost<{
+    ok: boolean;
+    created: {
+      type: string;
+      id: string;
+      title: string;
+    };
+    classification: Record<string, unknown>;
+  }>("/brain/local/capture", {
+    text,
+  });
+}
+
 // --- Project Brain ---
 
 export type ProjectBrain = {
