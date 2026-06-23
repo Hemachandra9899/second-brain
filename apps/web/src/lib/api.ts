@@ -1226,6 +1226,24 @@ export async function dismissBrainInboxItem(itemId: string) {
   }>(`/brain/local/inbox/${itemId}/dismiss`, {});
 }
 
+export async function updateBrainInboxItem(
+  itemId: string,
+  updates: {
+    suggested_type?: string;
+    title?: string;
+    description?: string | null;
+    due_date?: string | null;
+    priority?: string;
+    tags?: string[];
+  }
+) {
+  return apiPost<{
+    ok: boolean;
+    message: string;
+    item: BrainInboxItem;
+  }>(`/brain/local/inbox/${itemId}/update`, updates);
+}
+
 export async function applyProjectBrainAction(
   projectId: string,
   action: {

@@ -237,6 +237,54 @@ def accept_brain_inbox_item(
     }
 
 
+def update_brain_inbox_item(
+    db: Session,
+    *,
+    current_user: User,
+    item_id: str,
+    updates: dict,
+) -> dict:
+    item = (
+        db.query(BrainInboxItem)
+        .filter(BrainInboxItem.user_id == current_user.id)
+        .filter(BrainInboxItem.id == item_id)
+        .first()
+    )
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Inbox item not found")
+
+    if item.status != "pending":
+        raise HTTPException(status_code=400, detail="Only pending inbox items can be edited")
+
+    if "suggested_type" in updates and updates["suggested_type"]:
+        item.suggested_type = updates["suggested_type"]
+
+    if "title" in updates and updates["title"]:
+        item.title = updates["title"]
+
+    if "description" in updates:
+        item.description = updates["description"]
+
+    if "due_date" in updates:
+        item.due_date = updates["due_date"]
+
+    if "priority" in updates and updates["priority"]:
+        item.priority = updates["priority"]
+
+    if "tags" in updates:
+        item.tags_json = json.dumps(updates["tags"] or [])
+
+    db.commit()
+    db.refresh(item)
+
+    return {
+        "ok": True,
+        "message": "Inbox draft updated.",
+        "item": _serialize(item),
+    }
+
+
 def dismiss_brain_inbox_item(
     db: Session,
     *,

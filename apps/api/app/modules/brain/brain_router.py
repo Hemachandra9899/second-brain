@@ -20,6 +20,7 @@ from app.modules.brain.brain_inbox_service import (
     create_brain_inbox_item,
     dismiss_brain_inbox_item,
     list_brain_inbox_items,
+    update_brain_inbox_item,
 )
 from app.modules.brain.brain_timeline_service import get_brain_timeline
 from app.modules.brain.brain_action_service import (
@@ -406,6 +407,15 @@ class BrainInboxCaptureRequest(BaseModel):
     text: str
 
 
+class BrainInboxUpdateRequest(BaseModel):
+    suggested_type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    due_date: str | None = None
+    priority: str | None = None
+    tags: list[str] | None = None
+
+
 @router.post("/local/inbox")
 def create_local_brain_inbox_item(
     payload: BrainInboxCaptureRequest,
@@ -453,6 +463,21 @@ def dismiss_local_brain_inbox_item(
         db=db,
         current_user=current_user,
         item_id=item_id,
+    )
+
+
+@router.post("/local/inbox/{item_id}/update")
+def update_local_brain_inbox_item(
+    item_id: str,
+    payload: BrainInboxUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return update_brain_inbox_item(
+        db=db,
+        current_user=current_user,
+        item_id=item_id,
+        updates=payload.model_dump(exclude_unset=True),
     )
 
 
