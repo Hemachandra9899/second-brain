@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_current_user
 from app.db.session import get_db
 from app.models import User
 from app.modules.projects.project_schema import CreateProjectRequest, UpdateProjectRequest, CreateGoalRequest, UpdateGoalRequest
+from app.modules.projects.project_brain_service import get_project_brain
 from app.modules.projects.project_service import (
     create_project,
     list_projects,
@@ -107,6 +108,19 @@ def update_goal_endpoint(
         goal_id=goal_id,
         payload=payload,
         user_id=current_user.id if current_user else None,
+    )
+
+
+@router.get("/{project_id}/brain")
+def project_brain(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return get_project_brain(
+        db=db,
+        current_user=current_user,
+        project_id=project_id,
     )
 
 

@@ -1062,3 +1062,59 @@ export async function acceptBrainProjectSuggestion(
     suggestion,
   });
 }
+
+// --- Project Brain ---
+
+export type ProjectBrain = {
+  project: {
+    id: string;
+    name: string;
+    description?: string | null;
+    status: string;
+    created_at?: string | null;
+  };
+  counts: {
+    tasks: number;
+    open_tasks: number;
+    related_items: number;
+    connections: number;
+    source_counts: Record<string, number>;
+  };
+  tasks: {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    priority: string;
+    due_date?: string | null;
+    source?: string | null;
+    notion_page_id?: string | null;
+  }[];
+  related_items: {
+    id: string;
+    source_type: string;
+    source_id: string;
+    source_url?: string | null;
+    title: string;
+    preview: string;
+    tags?: string | null;
+  }[];
+  edges: {
+    id: string;
+    source: string;
+    target: string;
+    label: string;
+    reason?: string | null;
+    weight: number;
+  }[];
+  next_action: {
+    title: string;
+    reason: string;
+    action_type: string;
+    source_id?: string | null;
+  };
+};
+
+export async function getProjectBrain(projectId: string) {
+  return apiGet<ProjectBrain>(`/projects/${projectId}/brain`);
+}
