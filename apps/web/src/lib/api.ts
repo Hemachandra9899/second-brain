@@ -864,3 +864,69 @@ export async function brainThink(query: string) {
     query,
   });
 }
+
+// --- Local Brain Index ---
+
+export type LocalBrainItem = {
+  id: string;
+  source_type: string;
+  source_id: string;
+  source_url?: string | null;
+  title: string;
+  preview: string;
+  tags?: string | null;
+  score?: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type LocalBrainSearchResponse = {
+  query: string;
+  source_type: string;
+  results: LocalBrainItem[];
+  count: number;
+};
+
+export type LocalBrainThinkResponse = {
+  answer: string;
+  sources: LocalBrainItem[];
+  gaps: string[];
+};
+
+export type LocalBrainHealth = {
+  score: number;
+  item_count: number;
+  open_tasks: number;
+  tasks_without_due_date: number;
+  failed_imports: number;
+  latest_dream_at?: string | null;
+  issues: string[];
+};
+
+export async function reindexLocalBrain() {
+  return apiPost<{
+    ok: boolean;
+    indexed: number;
+    count_by_type: Record<string, number>;
+  }>("/brain/local/reindex", {});
+}
+
+export async function searchLocalBrain(query: string, sourceType = "all") {
+  const params = new URLSearchParams({
+    query,
+    source_type: sourceType,
+    limit: "12",
+  });
+
+  return apiGet<LocalBrainSearchResponse>(`/brain/local/search?${params}`);
+}
+
+export async function thinkLocalBrain(query: string) {
+  return apiPost<LocalBrainThinkResponse>("/brain/local/think", {
+    query,
+  });
+}
+
+export async function getLocalBrainHealth() {
+  return apiGet<LocalBrainHealth>("/brain/local/health");
+}

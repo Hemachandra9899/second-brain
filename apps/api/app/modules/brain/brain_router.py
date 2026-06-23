@@ -1,12 +1,10 @@
-import json
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.auth import require_current_user
 from app.db.session import get_db
 from app.models import (
-    ActivityEvent,
     Dream,
     MemoryCard,
     NotionTodoPage,
@@ -16,12 +14,20 @@ from app.models import (
 )
 from app.modules.brain.brain_schema import BrainAskRequest
 from app.modules.brain.brain_service import ask_brain
-from app.services.llm_nvidia import ask_deep
-
+from app.modules.brain.local_brain_service import (
+    get_local_brain_health,
+    rebuild_local_brain,
+    search_local_brain,
+    think_local_brain,
+)
 router = APIRouter()
 
 
 class BrainThinkRequest(BaseModel):
+    query: str
+
+
+class LocalBrainThinkRequest(BaseModel):
     query: str
 
 
@@ -209,124 +215,63 @@ def brain_think(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_current_user),
 ):
-    user_id = current_user.id
-
-    tasks = (
-        db.query(Task)
-        .filter(Task.user_id == user_id)
-        .order_by(Task.created_at.desc())
-        .limit(20)
-        .all()
+    return think_local_brain(
+        db=db,
+        current_user=current_user,
+        query=payload.query,
     )
 
-    memories = (
-        db.query(MemoryCard)
-        .filter(MemoryCard.user_id == user_id)
-        .order_by(MemoryCard.created_at.desc())
-        .limit(12)
-        .all()
+
+@router.post("/local/reindex")
+def reindex_local_brain(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return rebuild_local_brain(
+        db=db,
+        current_user=current_user,
     )
 
-    writings = (
-        db.query(WritingDocument)
-        .filter(WritingDocument.user_id == user_id)
-        .order_by(WritingDocument.created_at.desc())
-        .limit(8)
-        .all()
+
+@router.get("/local/search")
+def local_brain_search(
+    query: str = Query(default=""),
+    source_type: str | None = Query(default=None),
+    limit: int = Query(default=12),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return search_local_brain(
+        db=db,
+        current_user=current_user,
+        query=query,
+        source_type=source_type,
+        limit=limit,
     )
 
-    dreams = (
-        db.query(Dream)
-        .filter(Dream.user_id == user_id)
-        .order_by(Dream.created_at.desc())
-        .limit(3)
-        .all()
+
+@router.post("/local/think")
+def local_brain_think(
+    payload: LocalBrainThinkRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return think_local_brain(
+        db=db,
+        current_user=current_user,
+        query=payload.query,
     )
 
-    sources = []
 
-    for task in tasks:
-        sources.append(
-            {
-                "id": task.id,
-                "type": "task",
-                "title": task.title,
-                "preview": _preview(task.description),
-                "date": task.due_date,
-            }
-        )
-
-    for memory in memories:
-        sources.append(
-            {
-                "id": memory.id,
-                "type": "memory",
-                "title": memory.title,
-                "preview": _preview(memory.summary),
-            }
-        )
-
-    for doc in writings:
-        sources.append(
-            {
-                "id": doc.id,
-                "type": "writing",
-                "title": doc.title,
-                "preview": _preview(doc.cleaned_markdown or doc.raw_text),
-            }
-        )
-
-    for dream in dreams:
-        sources.append(
-            {
-                "id": dream.id,
-                "type": "dream",
-                "title": dream.title,
-                "preview": _preview(dream.summary),
-            }
-        )
-
-    context = json.dumps(sources, ensure_ascii=False, indent=2)
-
-    answer = ask_deep(
-        prompt=f"""
-User question:
-{payload.query}
-
-Second Brain sources:
-{context}
-
-Answer using only the sources above.
-Return:
-1. Direct answer
-2. Sources used
-3. Gaps / what is missing
-4. One next action
-""".strip(),
-        system=(
-            "You are Second Brain Think Mode. "
-            "Be concise. Do not invent facts. "
-            "Always mention gaps if evidence is missing."
-        ),
-        max_tokens=1200,
+@router.get("/local/health")
+def local_brain_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return get_local_brain_health(
+        db=db,
+        current_user=current_user,
     )
-
-    gaps = []
-
-    if not tasks:
-        gaps.append("No tasks found.")
-    if not memories:
-        gaps.append("No memory cards found.")
-    if not writings:
-        gaps.append("No writing documents found.")
-    if not dreams:
-        gaps.append("No Dream Mode output found.")
-
-    return {
-        "answer": answer,
-        "sources": sources[:12],
-        "gaps": gaps,
-    }
 
 
 @router.post("/ask")
