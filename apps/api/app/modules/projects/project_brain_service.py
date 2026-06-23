@@ -164,3 +164,105 @@ def get_project_brain(
         "edges": [_edge_json(edge) for edge in edges],
         "next_action": next_action,
     }
+
+
+import json
+
+from app.services.llm_nvidia import ask_deep
+
+
+def think_project_brain(
+    db: Session,
+    *,
+    current_user: User,
+    project_id: str,
+    query: str,
+) -> dict:
+    brain = get_project_brain(
+        db=db,
+        current_user=current_user,
+        project_id=project_id,
+    )
+
+    sources = []
+
+    for task in brain["tasks"]:
+        sources.append(
+            {
+                "type": "task",
+                "id": task["id"],
+                "title": task["title"],
+                "preview": task.get("description") or "",
+                "status": task.get("status"),
+                "due_date": task.get("due_date"),
+            }
+        )
+
+    for item in brain["related_items"]:
+        sources.append(
+            {
+                "type": item["source_type"],
+                "id": item["id"],
+                "title": item["title"],
+                "preview": item["preview"],
+                "url": item.get("source_url"),
+            }
+        )
+
+    gaps = []
+
+    if not brain["tasks"]:
+        gaps.append("No tasks are linked to this project yet.")
+
+    if not brain["related_items"]:
+        gaps.append("No related brain items found for this project.")
+
+    if not brain["edges"]:
+        gaps.append("No strong brain connections found yet.")
+
+    context = {
+        "project": brain["project"],
+        "counts": brain["counts"],
+        "next_action": brain["next_action"],
+        "sources": sources[:30],
+    }
+
+    answer = ask_deep(
+        prompt=f"""
+User question:
+{query}
+
+Project brain context:
+{json.dumps(context, ensure_ascii=False, indent=2)}
+
+Answer using only this project context.
+
+Return:
+1. Direct answer
+2. Sources used
+3. Gaps / missing information
+4. One concrete next action
+""".strip(),
+        system=(
+            "You are Project Think Mode inside Second Brain. "
+            "Be concise, practical, and honest. "
+            "Do not invent facts. "
+            "If evidence is missing, say what is missing."
+        ),
+        max_tokens=1000,
+    )
+
+    if answer.startswith("AI provider"):
+        answer = (
+            f"Project: {brain['project']['name']}\n\n"
+            f"Next action: {brain['next_action']['title']}\n"
+            f"Reason: {brain['next_action']['reason']}\n\n"
+            "AI synthesis is unavailable right now, but project context loaded."
+        )
+
+    return {
+        "answer": answer,
+        "sources": sources[:12],
+        "gaps": gaps,
+        "next_action": brain["next_action"],
+    }

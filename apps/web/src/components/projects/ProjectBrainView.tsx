@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getProjectBrain, type ProjectBrain } from "@/lib/api";
+import { ProjectThinkBox } from "@/components/projects/ProjectThinkBox";
 
 export function ProjectBrainView({ projectId }: { projectId: string }) {
   const [brain, setBrain] = useState<ProjectBrain | null>(null);
@@ -63,6 +64,8 @@ export function ProjectBrainView({ projectId }: { projectId: string }) {
           </p>
         </div>
       </section>
+
+      <ProjectThinkBox projectId={projectId} />
 
       <section className="mt-6">
         <p className="text-sm font-bold text-zinc-950 dark:text-white">

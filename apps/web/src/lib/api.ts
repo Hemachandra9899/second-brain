@@ -1118,3 +1118,29 @@ export type ProjectBrain = {
 export async function getProjectBrain(projectId: string) {
   return apiGet<ProjectBrain>(`/projects/${projectId}/brain`);
 }
+
+export type ProjectThinkResponse = {
+  answer: string;
+  sources: {
+    type: string;
+    id: string;
+    title: string;
+    preview?: string | null;
+    status?: string | null;
+    due_date?: string | null;
+    url?: string | null;
+  }[];
+  gaps: string[];
+  next_action: {
+    title: string;
+    reason: string;
+    action_type: string;
+    source_id?: string | null;
+  };
+};
+
+export async function thinkProjectBrain(projectId: string, query: string) {
+  return apiPost<ProjectThinkResponse>(`/projects/${projectId}/brain/think`, {
+    query,
+  });
+}

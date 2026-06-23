@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user, require_current_user
 from app.db.session import get_db
 from app.models import User
 from app.modules.projects.project_schema import CreateProjectRequest, UpdateProjectRequest, CreateGoalRequest, UpdateGoalRequest
-from app.modules.projects.project_brain_service import get_project_brain
+from app.modules.projects.project_brain_service import (
+    get_project_brain,
+    think_project_brain,
+)
 from app.modules.projects.project_service import (
     create_project,
     list_projects,
@@ -121,6 +125,25 @@ def project_brain(
         db=db,
         current_user=current_user,
         project_id=project_id,
+    )
+
+
+class ProjectThinkRequest(BaseModel):
+    query: str
+
+
+@router.post("/{project_id}/brain/think")
+def project_brain_think(
+    project_id: str,
+    payload: ProjectThinkRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return think_project_brain(
+        db=db,
+        current_user=current_user,
+        project_id=project_id,
+        query=payload.query,
     )
 
 
