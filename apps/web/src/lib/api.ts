@@ -1177,6 +1177,55 @@ export async function thinkProjectBrain(projectId: string, query: string) {
   });
 }
 
+// --- Brain Inbox ---
+
+export type BrainInboxItem = {
+  id: string;
+  raw_text: string;
+  suggested_type: string;
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+  priority?: string | null;
+  tags?: string[];
+  status: string;
+  created_item_type?: string | null;
+  created_item_id?: string | null;
+  created_at?: string | null;
+};
+
+export async function createBrainInboxItem(text: string) {
+  return apiPost<{
+    ok: boolean;
+    item: BrainInboxItem;
+  }>("/brain/local/inbox", {
+    text,
+  });
+}
+
+export async function getBrainInbox() {
+  return apiGet<{
+    items: BrainInboxItem[];
+    count: number;
+  }>("/brain/local/inbox");
+}
+
+export async function acceptBrainInboxItem(itemId: string) {
+  return apiPost<{
+    ok: boolean;
+    message: string;
+    item: BrainInboxItem;
+  }>(`/brain/local/inbox/${itemId}/accept`, {});
+}
+
+export async function dismissBrainInboxItem(itemId: string) {
+  return apiPost<{
+    ok: boolean;
+    message: string;
+    item: BrainInboxItem;
+  }>(`/brain/local/inbox/${itemId}/dismiss`, {});
+}
+
 export async function applyProjectBrainAction(
   projectId: string,
   action: {

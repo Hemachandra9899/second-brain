@@ -15,6 +15,12 @@ from app.models import (
     WritingDocument,
 )
 from app.modules.brain.brain_capture_service import capture_to_brain
+from app.modules.brain.brain_inbox_service import (
+    accept_brain_inbox_item,
+    create_brain_inbox_item,
+    dismiss_brain_inbox_item,
+    list_brain_inbox_items,
+)
 from app.modules.brain.brain_timeline_service import get_brain_timeline
 from app.modules.brain.brain_action_service import (
     accept_brain_action,
@@ -393,6 +399,60 @@ def local_brain_capture(
         db=db,
         current_user=current_user,
         text=payload.text,
+    )
+
+
+class BrainInboxCaptureRequest(BaseModel):
+    text: str
+
+
+@router.post("/local/inbox")
+def create_local_brain_inbox_item(
+    payload: BrainInboxCaptureRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return create_brain_inbox_item(
+        db=db,
+        current_user=current_user,
+        text=payload.text,
+    )
+
+
+@router.get("/local/inbox")
+def get_local_brain_inbox(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return list_brain_inbox_items(
+        db=db,
+        current_user=current_user,
+    )
+
+
+@router.post("/local/inbox/{item_id}/accept")
+def accept_local_brain_inbox_item(
+    item_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return accept_brain_inbox_item(
+        db=db,
+        current_user=current_user,
+        item_id=item_id,
+    )
+
+
+@router.post("/local/inbox/{item_id}/dismiss")
+def dismiss_local_brain_inbox_item(
+    item_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return dismiss_brain_inbox_item(
+        db=db,
+        current_user=current_user,
+        item_id=item_id,
     )
 
 
