@@ -52,6 +52,8 @@ type Message = {
 
 const starterChips = [
   "Plan my day",
+  "Run Dream Mode",
+  "Think about my brain",
   "Create a task",
   "Search memory",
   "Connect Notion",

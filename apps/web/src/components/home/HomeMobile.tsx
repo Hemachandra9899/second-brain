@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getRecentActivity, type ActivityEvent } from "@/lib/api";
 import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
 import { DreamModeCard } from "@/components/home/DreamModeCard";
+import { BrainMapCard } from "@/components/home/BrainMapCard";
 import { DailyCommandCenter } from "@/components/home/DailyCommandCenter";
 
 function formatTime(value?: string | null) {
@@ -270,6 +271,8 @@ export function HomeMobile() {
         </section>
 
         <DreamModeCard />
+
+        <BrainMapCard />
 
         <SavedInsightsPreview events={savedEvents} />
 

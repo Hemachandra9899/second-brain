@@ -815,3 +815,52 @@ export async function acceptDreamAction(dreamId: string, actionIndex: number) {
     {}
   );
 }
+
+// --- Brain Map + Think ---
+
+export type BrainMapNode = {
+  id: string;
+  label: string;
+  type: "brain" | "hub" | "task" | "memory" | "writing" | "notion" | "dream" | string;
+  subtitle?: string | null;
+};
+
+export type BrainMapEdge = {
+  source: string;
+  target: string;
+  label: string;
+};
+
+export type BrainMap = {
+  nodes: BrainMapNode[];
+  edges: BrainMapEdge[];
+  counts: {
+    tasks: number;
+    memories: number;
+    writings: number;
+    notion_pages: number;
+    dreams: number;
+  };
+};
+
+export type BrainThinkResponse = {
+  answer: string;
+  sources: {
+    id: string;
+    type: string;
+    title: string;
+    preview?: string | null;
+    date?: string | null;
+  }[];
+  gaps: string[];
+};
+
+export async function getBrainMap() {
+  return apiGet<BrainMap>("/brain/map");
+}
+
+export async function brainThink(query: string) {
+  return apiPost<BrainThinkResponse>("/brain/think", {
+    query,
+  });
+}
