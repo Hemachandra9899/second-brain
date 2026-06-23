@@ -3,6 +3,11 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models import Project, Goal
+from app.modules.brain.local_brain_indexer import (
+    delete_brain_item,
+    index_goal_to_local_brain,
+    index_project_to_local_brain,
+)
 from app.modules.projects.project_schema import CreateProjectRequest, UpdateProjectRequest, CreateGoalRequest, UpdateGoalRequest
 
 
@@ -41,6 +46,11 @@ def create_project(db: Session, payload: CreateProjectRequest, user_id: str | No
     db.commit()
     db.refresh(project)
 
+    try:
+        index_project_to_local_brain(db=db, project=project)
+    except Exception:
+        pass
+
     return serialize_project(project)
 
 
@@ -77,6 +87,11 @@ def update_project(db: Session, project_id: str, payload: UpdateProjectRequest, 
     db.commit()
     db.refresh(project)
 
+    try:
+        index_project_to_local_brain(db=db, project=project)
+    except Exception:
+        pass
+
     return serialize_project(project)
 
 
@@ -90,6 +105,16 @@ def delete_project(db: Session, project_id: str, user_id: str | None = None) -> 
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    try:
+        delete_brain_item(
+            db,
+            user_id=project.user_id,
+            source_type="project",
+            source_id=project.id,
+        )
+    except Exception:
+        pass
 
     db.delete(project)
     db.commit()
@@ -114,6 +139,11 @@ def create_goal(db: Session, payload: CreateGoalRequest, user_id: str | None = N
     db.add(goal)
     db.commit()
     db.refresh(goal)
+
+    try:
+        index_goal_to_local_brain(db=db, goal=goal)
+    except Exception:
+        pass
 
     return serialize_goal(goal)
 
@@ -154,6 +184,11 @@ def update_goal(db: Session, goal_id: str, payload: UpdateGoalRequest, user_id: 
     db.commit()
     db.refresh(goal)
 
+    try:
+        index_goal_to_local_brain(db=db, goal=goal)
+    except Exception:
+        pass
+
     return serialize_goal(goal)
 
 
@@ -167,6 +202,16 @@ def delete_goal(db: Session, goal_id: str, user_id: str | None = None) -> dict:
 
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
+
+    try:
+        delete_brain_item(
+            db,
+            user_id=goal.user_id,
+            source_type="goal",
+            source_id=goal.id,
+        )
+    except Exception:
+        pass
 
     db.delete(goal)
     db.commit()

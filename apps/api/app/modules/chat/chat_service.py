@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models import User, Task, NotionConnection, NotionTodoPage
+from app.modules.brain.brain_timeline_service import get_brain_timeline
+from app.modules.brain.brain_action_service import suggest_brain_actions
+from app.modules.brain.local_brain_service import search_local_brain, think_local_brain
 from app.modules.chat.chat_schema import ChatRequest
 from app.services.llm_nvidia import ask_llm, ask_fast
 from app.modules.chat.chat_intent_service import classify_chat_intent
@@ -118,6 +121,74 @@ def run_chat(
 
     if intent["intent"] == "query_latest_dream":
         return _handle_query_latest_dream(db, current_user)
+
+    if not current_user:
+        pass
+    else:
+        text = message.strip().lower()
+
+        if "what changed" in text or "recently" in text or "timeline" in text:
+            timeline = get_brain_timeline(
+                db=db,
+                current_user=current_user,
+            )
+
+            if not timeline["events"]:
+                return {
+                    "answer": "Nothing recent in your local brain yet.",
+                    "sources": [],
+                }
+
+            lines = []
+            for event in timeline["events"][:6]:
+                lines.append(f"- {event['title']} ({event['source_type']})")
+
+            return {
+                "answer": "Here is what changed recently:\n\n" + "\n".join(lines),
+                "sources": timeline["events"][:6],
+            }
+
+        if "what should i do next" in text or "next action" in text:
+            actions = suggest_brain_actions(
+                db=db,
+                current_user=current_user,
+            )
+
+            if not actions["actions"]:
+                return {
+                    "answer": "I do not see a strong next action yet. Add or rebuild local brain items first.",
+                    "sources": [],
+                }
+
+            top = actions["actions"][0]
+
+            return {
+                "answer": f"Next best action: {top['title']}\n\nWhy: {top.get('reason', '')}",
+                "sources": top.get("items", []),
+            }
+
+        if text.startswith("search my brain for "):
+            query = message.replace("search my brain for", "", 1).strip()
+            result = search_local_brain(
+                db=db,
+                current_user=current_user,
+                query=query,
+            )
+
+            lines = [f"- {item['title']} ({item['source_type']})" for item in result["results"][:6]]
+
+            return {
+                "answer": "I found:\n\n" + "\n".join(lines),
+                "sources": result["results"][:6],
+            }
+
+        if text.startswith("think about ") or text.startswith("think on "):
+            query = message.replace("think about", "", 1).replace("think on", "", 1).strip()
+            return think_local_brain(
+                db=db,
+                current_user=current_user,
+                query=query,
+            )
 
     user_id = current_user.id if current_user else None
 

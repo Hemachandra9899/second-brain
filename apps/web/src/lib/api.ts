@@ -1115,6 +1115,22 @@ export type ProjectBrain = {
   };
 };
 
+export type BrainTimelineEvent = {
+  id: string;
+  type: string;
+  source_type: string;
+  title: string;
+  preview?: string | null;
+  created_at?: string | null;
+};
+
+export async function getBrainTimeline() {
+  return apiGet<{
+    events: BrainTimelineEvent[];
+    count: number;
+  }>("/brain/local/timeline");
+}
+
 export async function getProjectBrain(projectId: string) {
   return apiGet<ProjectBrain>(`/projects/${projectId}/brain`);
 }

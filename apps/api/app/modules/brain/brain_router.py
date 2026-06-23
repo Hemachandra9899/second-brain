@@ -14,6 +14,7 @@ from app.models import (
     User,
     WritingDocument,
 )
+from app.modules.brain.brain_timeline_service import get_brain_timeline
 from app.modules.brain.brain_action_service import (
     accept_brain_action,
     suggest_brain_actions,
@@ -282,6 +283,17 @@ def local_brain_think(
         db=db,
         current_user=current_user,
         query=payload.query,
+    )
+
+
+@router.get("/local/timeline")
+def local_brain_timeline(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return get_brain_timeline(
+        db=db,
+        current_user=current_user,
     )
 
 

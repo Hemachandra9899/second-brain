@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.models import ActivityEvent, BrainItem, Dream, MemoryCard, NotionTodoPage, Task, WritingDocument
+from app.models import ActivityEvent, BrainItem, Dream, Goal, MemoryCard, NotionTodoPage, Project, Task, WritingDocument
 
 
 def _clean(text: str | None) -> str:
@@ -210,6 +210,56 @@ def index_writing_to_local_brain(
         title=doc.title,
         body=doc.cleaned_markdown or doc.raw_text,
         tags=doc.source_type,
+        commit=commit,
+    )
+
+
+def index_project_to_local_brain(
+    db: Session,
+    project: Project,
+    *,
+    commit: bool = True,
+) -> BrainItem | None:
+    body = f"""
+Project: {project.name}
+Description: {project.description or ""}
+Status: {project.status}
+""".strip()
+
+    return upsert_brain_item(
+        db,
+        user_id=project.user_id,
+        source_type="project",
+        source_id=project.id,
+        title=project.name,
+        body=body,
+        tags=f"project,{project.status}",
+        commit=commit,
+    )
+
+
+def index_goal_to_local_brain(
+    db: Session,
+    goal: Goal,
+    *,
+    commit: bool = True,
+) -> BrainItem | None:
+    body = f"""
+Goal: {goal.title}
+Description: {goal.description or ""}
+Project ID: {goal.project_id or ""}
+Target date: {goal.target_date or ""}
+Status: {goal.status}
+""".strip()
+
+    return upsert_brain_item(
+        db,
+        user_id=goal.user_id,
+        source_type="goal",
+        source_id=goal.id,
+        title=goal.title,
+        body=body,
+        tags=f"goal,{goal.status},{goal.target_date or ''}",
         commit=commit,
     )
 
