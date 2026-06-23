@@ -6,6 +6,7 @@ from app.models import User, Task, NotionConnection, NotionTodoPage
 from app.modules.chat.chat_schema import ChatRequest
 from app.services.llm_nvidia import ask_llm, ask_fast
 from app.modules.chat.chat_intent_service import classify_chat_intent
+from app.modules.dreams.dream_service import run_dream, get_latest_dream
 from app.modules.mood.mood_service import detect_mood, save_mood_event
 from app.modules.integrations.notion.notion_oauth_service import (
     get_notion_connection,
@@ -108,6 +109,15 @@ def run_chat(
 
     if intent["intent"] == "complete_task_request":
         return _handle_complete_task_request(db, message, intent, current_user)
+
+    if intent["intent"] == "run_dream":
+        return _handle_run_dream(db, current_user, mode="nightly")
+
+    if intent["intent"] == "run_think_mode":
+        return _handle_run_dream(db, current_user, mode="think")
+
+    if intent["intent"] == "query_latest_dream":
+        return _handle_query_latest_dream(db, current_user)
 
     user_id = current_user.id if current_user else None
 
@@ -949,4 +959,44 @@ def _handle_connect_existing_page(
     return {
         "answer": "To connect an existing Notion page, use the 'Connect existing page' option in settings, or provide the page URL and database.",
         "intent": intent,
+    }
+
+
+def _handle_run_dream(
+    db: Session,
+    current_user: User | None,
+    mode: str = "nightly",
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first so I can run Dream Mode.", "intent": {"intent": f"run_{mode}_mode"}}
+
+    try:
+        dream = run_dream(db=db, current_user=current_user, mode=mode)
+        return {
+            "answer": f"**{dream['title']}**\n\n{dream['summary']}",
+            "intent": {"intent": f"run_{mode}_mode"},
+            "dream": dream,
+        }
+    except Exception as exc:
+        return {"answer": f"Could not run Dream Mode: {str(exc)}", "intent": {"intent": f"run_{mode}_mode"}}
+
+
+def _handle_query_latest_dream(
+    db: Session,
+    current_user: User | None,
+) -> dict:
+    if not current_user:
+        return {"answer": "Please sign in first.", "intent": {"intent": "query_latest_dream"}}
+
+    dream = get_latest_dream(db=db, current_user=current_user)
+    if not dream:
+        return {
+            "answer": "You haven\u2019t run Dream Mode yet. Try saying \u2018run dream\u2019 or \u2018think mode\u2019.",
+            "intent": {"intent": "query_latest_dream"},
+        }
+
+    return {
+        "answer": f"**{dream['title']}**\n\n{dream['summary']}",
+        "intent": {"intent": "query_latest_dream"},
+        "dream": dream,
     }

@@ -9,6 +9,7 @@ from app.models import (
     Dream,
     MemoryCard,
     NotionTodoPage,
+    Project,
     Task,
     User,
     WritingDocument,
@@ -352,3 +353,131 @@ def list_dreams(db: Session, *, current_user: User, limit: int = 20) -> list[dic
         .all()
     )
     return [serialize_dream(dream) for dream in dreams]
+
+
+def get_dream_by_id(db: Session, *, current_user: User, dream_id: str) -> dict | None:
+    dream = (
+        db.query(Dream)
+        .filter(Dream.id == dream_id, Dream.user_id == current_user.id)
+        .first()
+    )
+    return serialize_dream(dream) if dream else None
+
+
+def accept_dream_action(
+    db: Session,
+    *,
+    current_user: User,
+    dream_id: str,
+    action_index: int,
+) -> dict:
+    dream = (
+        db.query(Dream)
+        .filter(Dream.id == dream_id, Dream.user_id == current_user.id)
+        .first()
+    )
+    if not dream:
+        raise ValueError("Dream not found")
+
+    actions = _loads(dream.suggested_actions_json, [])
+    if action_index < 0 or action_index >= len(actions):
+        raise ValueError(f"Action index {action_index} out of range")
+
+    action = actions[action_index]
+    action_type = action.get("action_type", "")
+    title = action.get("title", "Untitled")
+    source_type = action.get("source_type")
+    source_id = action.get("source_id")
+
+    result = {"action": action, "created": None}
+
+    if action_type == "create_task":
+        task = Task(
+            id=str(uuid4()),
+            user_id=current_user.id,
+            title=title,
+            status="Not Started",
+            source="dream",
+        )
+        db.add(task)
+        db.flush()
+        result["created"] = {"type": "task", "id": task.id, "title": task.title}
+
+    elif action_type == "create_project":
+        project = Project(
+            id=str(uuid4()),
+            user_id=current_user.id,
+            name=title,
+        )
+        db.add(project)
+        db.flush()
+        if source_type == "task" and source_id:
+            task_obj = (
+                db.query(Task)
+                .filter(Task.id == source_id, Task.user_id == current_user.id)
+                .first()
+            )
+            if task_obj:
+                task_obj.project_id = project.id
+        result["created"] = {"type": "project", "id": project.id, "name": project.name}
+
+    elif action_type == "open_notion":
+        result["created"] = {
+            "type": "redirect",
+            "url": f"https://notion.so/{source_id}" if source_id else None,
+        }
+
+    elif action_type in ("review_tasks", "move_to_today"):
+        today = date.today().isoformat()
+        if source_type == "task" and source_id:
+            task_obj = (
+                db.query(Task)
+                .filter(Task.id == source_id, Task.user_id == current_user.id)
+                .first()
+            )
+            if task_obj:
+                old_status = task_obj.status
+                task_obj.due_date = today
+                task_obj.status = "Not Started"
+                result["created"] = {
+                    "type": "task_updated",
+                    "id": task_obj.id,
+                    "title": task_obj.title,
+                    "due_date": today,
+                    "old_status": old_status,
+                }
+
+    elif action_type == "save_memory":
+        from app.models import MemoryCard
+
+        card = MemoryCard(
+            id=str(uuid4()),
+            user_id=current_user.id,
+            title=title,
+            summary=action.get("reason", ""),
+            source="dream",
+        )
+        db.add(card)
+        db.flush()
+        result["created"] = {"type": "memory", "id": card.id, "title": card.title}
+
+    elif action_type == "dismiss":
+        result["created"] = {"type": "dismissed"}
+
+    db.commit()
+
+    try:
+        create_activity_event(
+            db,
+            event_type="dream_action_accepted",
+            title=f"Dream action: {action_type} — {title}",
+            description=action.get("reason", ""),
+            source_type="dream",
+            source_id=dream_id,
+            metadata={"action_type": action_type, "action_index": action_index},
+            current_user=current_user,
+        )
+    except Exception:
+        pass
+
+    return result

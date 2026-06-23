@@ -192,6 +192,7 @@ export type AssistantResponse = {
   notion_todo_page?: NotionTodoPageData | null;
   notion_todo_items?: NotionTodoItemData[];
   checked_block_id?: string;
+  dream?: Dream | null;
 };
 
 function getUserTimezone() {
@@ -752,4 +753,11 @@ export async function getLatestDream() {
 
 export async function getDreams() {
   return apiGet<{ dreams: Dream[] }>("/dreams");
+}
+
+export async function acceptDreamAction(dreamId: string, actionIndex: number) {
+  return apiPost<{ success: boolean; result: { action: DreamSuggestedAction; created: unknown } }>(
+    `/dreams/${dreamId}/actions/${actionIndex}/accept`,
+    {}
+  );
 }

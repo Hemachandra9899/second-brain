@@ -159,6 +159,39 @@ def _rule_based_intent(message: str) -> dict | None:
             "needs_graphrag": False,
         }
 
+    if re.search(r"(run|do|trigger)\s+(dream|nightly)", text):
+        return {
+            "intent": "run_dream",
+            "title": None,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": False,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"(think|deep)\s+mode", text):
+        return {
+            "intent": "run_think_mode",
+            "title": None,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": False,
+            "needs_graphrag": False,
+        }
+
+    if re.search(r"(what.*(dream|my brain)|show.*dream|latest.*dream)", text):
+        return {
+            "intent": "query_latest_dream",
+            "title": None,
+            "description": text,
+            "priority": "Normal",
+            "due_date": None,
+            "needs_notion": False,
+            "needs_graphrag": False,
+        }
+
     if text.startswith("/"):
         return {
             "intent": "general_chat",
@@ -243,7 +276,7 @@ Classify this Second Brain chat message.
 
 Return strict JSON only:
 {{
-  "intent": "greeting|create_task|create_notion_task|create_notion_todo_page|show_notion_todo_page|add_todos_to_notion_page|check_notion_todo|rename_notion_todo_page|connect_existing_notion_page|query_today_tasks|query_notion_tasks|complete_task_request|capture_note|knowledge_question|general_chat",
+  "intent": "greeting|create_task|create_notion_task|create_notion_todo_page|show_notion_todo_page|add_todos_to_notion_page|check_notion_todo|rename_notion_todo_page|connect_existing_notion_page|query_today_tasks|query_notion_tasks|complete_task_request|capture_note|knowledge_question|run_dream|run_think_mode|query_latest_dream|general_chat",
   "title": "short title or null",
   "description": "description or null",
   "priority": "Low|Normal|High",

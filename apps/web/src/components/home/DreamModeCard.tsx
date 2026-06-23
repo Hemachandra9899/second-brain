@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getLatestDream, runDream, type Dream } from "@/lib/api";
+import { getLatestDream, runDream, acceptDreamAction, type Dream } from "@/lib/api";
 
 export function DreamModeCard() {
   const [dream, setDream] = useState<Dream | null>(null);
@@ -28,6 +28,16 @@ export function DreamModeCard() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAccept(index: number) {
+    if (!dream) return;
+    try {
+      await acceptDreamAction(dream.id, index);
+      setNotice("Action accepted.");
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Could not accept action.");
     }
   }
 
@@ -77,19 +87,33 @@ export function DreamModeCard() {
       {dream?.suggested_actions?.length ? (
         <div className="mt-5">
           <p className="text-xs font-bold uppercase tracking-wide text-sky-600">
-            Suggested next action
+            Suggested next actions
           </p>
 
-          <div className="mt-3 rounded-2xl bg-zinc-950 px-4 py-4 text-white dark:bg-white dark:text-black">
-            <p className="text-sm font-semibold">
-              {dream.suggested_actions[0].title}
-            </p>
-
-            {dream.suggested_actions[0].reason ? (
-              <p className="mt-2 text-xs leading-5 opacity-75">
-                {dream.suggested_actions[0].reason}
-              </p>
-            ) : null}
+          <div className="mt-3 space-y-2">
+            {dream.suggested_actions.slice(0, 3).map((action, index) => (
+              <div
+                key={`${action.title}-${index}`}
+                className="rounded-2xl bg-zinc-950 px-4 py-4 text-white dark:bg-white dark:text-black"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">{action.title}</p>
+                    {action.reason ? (
+                      <p className="mt-2 text-xs leading-5 opacity-75">
+                        {action.reason}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    onClick={() => handleAccept(index)}
+                    className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-bold text-zinc-950 transition active:scale-95 dark:bg-zinc-800 dark:text-white"
+                  >
+                    Accept
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ) : null}
