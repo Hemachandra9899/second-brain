@@ -930,3 +930,44 @@ export async function thinkLocalBrain(query: string) {
 export async function getLocalBrainHealth() {
   return apiGet<LocalBrainHealth>("/brain/local/health");
 }
+
+// --- Local Brain Graph ---
+
+export type LocalBrainGraphNode = {
+  id: string;
+  label: string;
+  type: string;
+  subtitle?: string | null;
+  source_id?: string | null;
+  source_url?: string | null;
+};
+
+export type LocalBrainGraphEdge = {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  reason?: string | null;
+  weight: number;
+};
+
+export type LocalBrainGraph = {
+  nodes: LocalBrainGraphNode[];
+  edges: LocalBrainGraphEdge[];
+  counts: {
+    nodes: number;
+    edges: number;
+  };
+};
+
+export async function getLocalBrainGraph() {
+  return apiGet<LocalBrainGraph>("/brain/local/graph");
+}
+
+export async function rebuildLocalBrainRelationships() {
+  return apiPost<{
+    ok: boolean;
+    items_checked: number;
+    edges_created: number;
+  }>("/brain/local/relationships/rebuild", {});
+}

@@ -243,10 +243,26 @@ Metadata: {event.metadata_json or ""}
 
     total = sum(count_by_type.values())
 
+    relationship_result = None
+
+    try:
+        from app.modules.brain.brain_relationship_service import rebuild_brain_relationships
+
+        relationship_result = rebuild_brain_relationships(
+            db=db,
+            current_user=current_user,
+        )
+    except Exception:
+        relationship_result = {
+            "ok": False,
+            "edges_created": 0,
+        }
+
     return {
         "ok": True,
         "indexed": total,
         "count_by_type": count_by_type,
+        "relationships": relationship_result,
     }
 
 

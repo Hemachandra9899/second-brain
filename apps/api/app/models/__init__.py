@@ -12,3 +12,4 @@ from app.models.import_job import ImportJob
 from app.models.notion_todo import NotionTodoPage
 from app.models.dream import Dream
 from app.models.brain_item import BrainItem
+from app.models.brain_edge import BrainEdge

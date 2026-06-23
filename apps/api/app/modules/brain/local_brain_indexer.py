@@ -53,6 +53,13 @@ def upsert_brain_item(
         db.commit()
         db.refresh(item)
 
+        try:
+            from app.modules.brain.brain_relationship_service import relate_item_to_local_brain
+
+            relate_item_to_local_brain(db=db, item=item)
+        except Exception:
+            pass
+
     return item
 
 

@@ -14,6 +14,10 @@ from app.models import (
 )
 from app.modules.brain.brain_schema import BrainAskRequest
 from app.modules.brain.brain_service import ask_brain
+from app.modules.brain.brain_relationship_service import (
+    get_local_brain_graph,
+    rebuild_brain_relationships,
+)
 from app.modules.brain.local_brain_service import (
     get_local_brain_health,
     rebuild_local_brain,
@@ -269,6 +273,28 @@ def local_brain_health(
     current_user: User = Depends(require_current_user),
 ):
     return get_local_brain_health(
+        db=db,
+        current_user=current_user,
+    )
+
+
+@router.post("/local/relationships/rebuild")
+def rebuild_local_brain_relationships(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return rebuild_brain_relationships(
+        db=db,
+        current_user=current_user,
+    )
+
+
+@router.get("/local/graph")
+def local_brain_graph(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return get_local_brain_graph(
         db=db,
         current_user=current_user,
     )

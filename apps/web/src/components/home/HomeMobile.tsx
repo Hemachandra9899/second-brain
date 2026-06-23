@@ -7,6 +7,7 @@ import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
 import { DreamModeCard } from "@/components/home/DreamModeCard";
 import { BrainMapCard } from "@/components/home/BrainMapCard";
 import { LocalBrainCard } from "@/components/home/LocalBrainCard";
+import { LocalBrainGraphCard } from "@/components/home/LocalBrainGraphCard";
 import { DailyCommandCenter } from "@/components/home/DailyCommandCenter";
 
 function formatTime(value?: string | null) {
@@ -244,6 +245,8 @@ export function HomeMobile() {
         <DailyCommandCenter />
 
         <LocalBrainCard />
+
+        <LocalBrainGraphCard />
 
         <QuickActions />
 
