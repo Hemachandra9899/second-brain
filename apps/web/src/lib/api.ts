@@ -971,3 +971,47 @@ export async function rebuildLocalBrainRelationships() {
     edges_created: number;
   }>("/brain/local/relationships/rebuild", {});
 }
+
+// --- Brain Actions ---
+
+export type BrainAction = {
+  action_type: "create_task" | "move_task_to_today" | string;
+  title: string;
+  reason?: string | null;
+  source_type?: string | null;
+  source_id?: string | null;
+  source_item_id?: string | null;
+  target_item_id?: string | null;
+  items?: {
+    id: string;
+    source_type: string;
+    source_id: string;
+    title: string;
+    preview?: string | null;
+    source_url?: string | null;
+  }[];
+};
+
+export type BrainActionsResponse = {
+  actions: BrainAction[];
+  count: number;
+};
+
+export async function getBrainActions() {
+  return apiGet<BrainActionsResponse>("/brain/local/actions");
+}
+
+export async function acceptBrainAction(action: BrainAction) {
+  return apiPost<{
+    ok: boolean;
+    message: string;
+    task?: {
+      id: string;
+      title: string;
+      status?: string | null;
+      due_date?: string | null;
+    };
+  }>("/brain/local/actions/accept", {
+    action,
+  });
+}

@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -11,6 +13,10 @@ from app.models import (
     Task,
     User,
     WritingDocument,
+)
+from app.modules.brain.brain_action_service import (
+    accept_brain_action,
+    suggest_brain_actions,
 )
 from app.modules.brain.brain_schema import BrainAskRequest
 from app.modules.brain.brain_service import ask_brain
@@ -33,6 +39,10 @@ class BrainThinkRequest(BaseModel):
 
 class LocalBrainThinkRequest(BaseModel):
     query: str
+
+
+class BrainActionAcceptRequest(BaseModel):
+    action: dict[str, Any]
 
 
 def _preview(text: str | None, n: int = 260) -> str:
@@ -297,6 +307,30 @@ def local_brain_graph(
     return get_local_brain_graph(
         db=db,
         current_user=current_user,
+    )
+
+
+@router.get("/local/actions")
+def get_local_brain_actions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return suggest_brain_actions(
+        db=db,
+        current_user=current_user,
+    )
+
+
+@router.post("/local/actions/accept")
+def accept_local_brain_action(
+    payload: BrainActionAcceptRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_current_user),
+):
+    return accept_brain_action(
+        db=db,
+        current_user=current_user,
+        action=payload.action,
     )
 
 
