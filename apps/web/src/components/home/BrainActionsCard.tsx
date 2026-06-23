@@ -41,16 +41,16 @@ export function BrainActionsCard() {
   }
 
   return (
-    <section className="mt-8 rounded-[2.3rem] bg-white p-6 shadow-sm ring-1 ring-sky-100 dark:bg-zinc-900 dark:ring-white/10">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-600">
+    <section className="sb-card mt-8 rounded-[2rem] p-6">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/50">
         Brain Actions
       </p>
 
-      <h2 className="font-display mt-4 text-4xl leading-none tracking-[-0.04em] text-zinc-950 dark:text-white">
+      <h2 className="mt-4 text-4xl font-semibold leading-none tracking-[-0.04em] text-white">
         Things your brain noticed.
       </h2>
 
-      <p className="mt-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+      <p className="mt-4 text-sm leading-6 text-white/55">
         Second Brain turns loose connections into useful next steps.
       </p>
 
@@ -59,14 +59,14 @@ export function BrainActionsCard() {
           {actions.slice(0, 5).map((action, index) => (
             <div
               key={`${action.title}-${index}`}
-              className="rounded-[1.5rem] bg-sky-50 p-4 dark:bg-zinc-950"
+              className="sb-soft-card rounded-[1.35rem] p-4"
             >
-              <p className="text-sm font-semibold text-zinc-950 dark:text-white">
+              <p className="text-sm font-semibold text-white">
                 {action.title}
               </p>
 
               {action.reason ? (
-                <p className="mt-2 text-xs leading-5 text-zinc-600 dark:text-zinc-400">
+                <p className="mt-2 text-xs leading-5 text-white/50">
                   {action.reason}
                 </p>
               ) : null}
@@ -76,12 +76,12 @@ export function BrainActionsCard() {
                   {action.items.map((item) => (
                     <div
                       key={item.id}
-                      className="min-w-[120px] rounded-2xl bg-white px-3 py-2 text-xs ring-1 ring-sky-100 dark:bg-zinc-900 dark:ring-white/10"
+                      className="sb-soft-card min-w-[120px] rounded-2xl px-3 py-2 text-xs"
                     >
-                      <p className="line-clamp-2 font-semibold text-zinc-900 dark:text-white">
+                      <p className="line-clamp-2 font-semibold text-white">
                         {item.title}
                       </p>
-                      <p className="mt-1 uppercase text-sky-600">
+                      <p className="mt-1 text-white/50 uppercase">
                         {item.source_type}
                       </p>
                     </div>
@@ -92,7 +92,7 @@ export function BrainActionsCard() {
               <button
                 onClick={() => accept(action, index)}
                 disabled={loadingIndex === index}
-                className="mt-4 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="mt-4 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:opacity-50"
               >
                 {loadingIndex === index
                   ? "Working..."
@@ -104,13 +104,13 @@ export function BrainActionsCard() {
           ))}
         </div>
       ) : (
-        <div className="mt-5 rounded-[1.5rem] bg-sky-50 p-4 text-sm text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400">
+        <div className="sb-soft-card mt-5 rounded-[1.35rem] p-4 text-sm text-white/50">
           No brain actions yet. Add more tasks, notes, dreams, or Notion pages.
         </div>
       )}
 
       {notice ? (
-        <p className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:bg-zinc-800 dark:text-zinc-300">
+        <p className="sb-soft-card mt-4 rounded-[1.35rem] px-4 py-3 text-sm font-medium text-white/80">
           {notice}
         </p>
       ) : null}

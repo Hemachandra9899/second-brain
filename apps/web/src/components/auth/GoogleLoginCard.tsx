@@ -24,18 +24,16 @@ export function GoogleLoginCard() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-[2rem] bg-white/80 p-8 shadow-xl backdrop-blur">
-      <h1 className="text-4xl font-semibold tracking-tight">Second Brain</h1>
-      <p className="mt-3 text-sm leading-6 text-slate-600">
-        Continue with Google to keep your tasks, knowledge, mood, and memory private to you.
-      </p>
-
-      <div className="mt-8">
-        <GoogleLogin
-          onSuccess={(res) => handleGoogleLogin(res.credential)}
-          onError={() => alert("Google login failed")}
-        />
-      </div>
+    <div className="flex w-full justify-center rounded-full bg-white px-5 py-3.5 text-black shadow-2xl">
+      <GoogleLogin
+        onSuccess={(res) => handleGoogleLogin(res.credential)}
+        onError={() => alert("Google login failed")}
+        theme="filled_black"
+        shape="pill"
+        size="large"
+        text="continue_with"
+        width="310"
+      />
     </div>
   );
 }

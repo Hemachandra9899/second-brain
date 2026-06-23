@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -9,14 +9,9 @@ const inter = Inter({
   variable: "--font-body",
 });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-display",
-});
-
 export const metadata: Metadata = {
-  title: "Second Brain",
-  description: "Your AI-powered second brain.",
+  title: "B",
+  description: "Your personal second brain.",
 };
 
 export default function RootLayout({
@@ -25,11 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${inter.variable} ${playfair.variable}`}
-    >
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body>
         <ThemeProvider>
           <AppProviders>{children}</AppProviders>

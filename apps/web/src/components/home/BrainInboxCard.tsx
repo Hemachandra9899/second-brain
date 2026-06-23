@@ -123,16 +123,16 @@ export function BrainInboxCard() {
   }
 
   return (
-    <section className="mt-8 rounded-[2.3rem] bg-white p-6 shadow-sm ring-1 ring-sky-100 dark:bg-zinc-900 dark:ring-white/10">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-600">
+    <section className="sb-card mt-8 rounded-[2rem] p-6">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/50">
         Brain Inbox
       </p>
 
-      <h2 className="font-display mt-4 text-4xl leading-none tracking-[-0.04em] text-zinc-950 dark:text-white">
+      <h2 className="mt-4 text-4xl font-semibold leading-none tracking-[-0.04em] text-white">
         Review before saving.
       </h2>
 
-      <p className="mt-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+      <p className="mt-4 text-sm leading-6 text-white/55">
         Dump anything. Second Brain drafts it. You decide what gets saved.
       </p>
 
@@ -140,19 +140,19 @@ export function BrainInboxCard() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Example: tomorrow fix Notion checkbox sync for the demo..."
-        className="mt-5 min-h-28 w-full rounded-[1.5rem] bg-sky-50 p-4 text-sm font-medium text-zinc-900 outline-none placeholder:text-zinc-400 dark:bg-zinc-950 dark:text-white"
+        className="mt-5 min-h-28 w-full rounded-[1.5rem] bg-white/5 p-4 text-sm font-medium text-white outline-none placeholder:text-white/30"
       />
 
       <button
         onClick={draft}
         disabled={loading || !text.trim()}
-        className="mt-4 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="mt-4 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-50"
       >
         {loading ? "Working..." : "Draft to Inbox"}
       </button>
 
       {notice ? (
-        <p className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:bg-zinc-800 dark:text-zinc-300">
+        <p className="sb-soft-card mt-4 rounded-[1.35rem] px-4 py-3 text-sm font-medium text-white/80">
           {notice}
         </p>
       ) : null}
@@ -165,7 +165,7 @@ export function BrainInboxCard() {
           return (
             <div
               key={item.id}
-              className="rounded-[1.5rem] bg-sky-50 p-4 dark:bg-zinc-950"
+              className="sb-soft-card rounded-[1.35rem] p-4"
             >
               {editing ? (
                 <div className="space-y-3">
@@ -174,7 +174,7 @@ export function BrainInboxCard() {
                     onChange={(e) =>
                       updateDraft(item.id, { suggested_type: e.target.value })
                     }
-                    className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-zinc-900 outline-none dark:bg-zinc-900 dark:text-white"
+                    className="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white outline-none"
                   >
                     <option value="task">Task</option>
                     <option value="memory">Memory</option>
@@ -185,7 +185,7 @@ export function BrainInboxCard() {
                   <input
                     value={draft.title || ""}
                     onChange={(e) => updateDraft(item.id, { title: e.target.value })}
-                    className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-zinc-900 outline-none dark:bg-zinc-900 dark:text-white"
+                    className="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white outline-none placeholder:text-white/30"
                     placeholder="Title"
                   />
 
@@ -194,7 +194,7 @@ export function BrainInboxCard() {
                     onChange={(e) =>
                       updateDraft(item.id, { description: e.target.value })
                     }
-                    className="min-h-24 w-full rounded-2xl bg-white px-4 py-3 text-sm text-zinc-900 outline-none dark:bg-zinc-900 dark:text-white"
+                    className="min-h-24 w-full rounded-2xl bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30"
                     placeholder="Description"
                   />
 
@@ -204,7 +204,7 @@ export function BrainInboxCard() {
                       onChange={(e) =>
                         updateDraft(item.id, { due_date: e.target.value })
                       }
-                      className="rounded-2xl bg-white px-4 py-3 text-sm text-zinc-900 outline-none dark:bg-zinc-900 dark:text-white"
+                      className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30"
                       placeholder="Due date"
                     />
 
@@ -213,7 +213,7 @@ export function BrainInboxCard() {
                       onChange={(e) =>
                         updateDraft(item.id, { priority: e.target.value })
                       }
-                      className="rounded-2xl bg-white px-4 py-3 text-sm text-zinc-900 outline-none dark:bg-zinc-900 dark:text-white"
+                      className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-white outline-none"
                     >
                       <option value="Low">Low</option>
                       <option value="Normal">Normal</option>
@@ -225,7 +225,7 @@ export function BrainInboxCard() {
                     <button
                       onClick={() => saveDraft(item)}
                       disabled={loading}
-                      className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:opacity-50"
                     >
                       Save draft
                     </button>
@@ -233,7 +233,7 @@ export function BrainInboxCard() {
                     <button
                       onClick={() => setEditingId(null)}
                       disabled={loading}
-                      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-700 ring-1 ring-sky-100 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-white/10"
+                      className="sb-chip rounded-full px-4 py-2 text-xs font-semibold"
                     >
                       Cancel
                     </button>
@@ -243,22 +243,22 @@ export function BrainInboxCard() {
                 <>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-zinc-950 dark:text-white">
+                      <p className="text-sm font-semibold text-white">
                         {item.title}
                       </p>
 
-                      <p className="mt-2 text-xs leading-5 text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-2 text-xs leading-5 text-white/50">
                         {item.description || item.raw_text}
                       </p>
 
                       {item.due_date ? (
-                        <p className="mt-2 text-xs font-semibold text-sky-700">
+                        <p className="mt-2 text-xs font-semibold text-white/60">
                           Due: {item.due_date}
                         </p>
                       ) : null}
                     </div>
 
-                    <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase text-sky-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <span className="sb-chip shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase">
                       {item.suggested_type}
                     </span>
                   </div>
@@ -267,7 +267,7 @@ export function BrainInboxCard() {
                     <button
                       onClick={() => accept(item.id)}
                       disabled={loading}
-                      className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:opacity-50"
                     >
                       Accept
                     </button>
@@ -281,7 +281,7 @@ export function BrainInboxCard() {
                         }));
                       }}
                       disabled={loading}
-                      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-sky-700 ring-1 ring-sky-100 disabled:opacity-50 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-white/10"
+                      className="sb-chip rounded-full px-4 py-2 text-xs font-semibold disabled:opacity-50"
                     >
                       Edit
                     </button>
@@ -289,7 +289,7 @@ export function BrainInboxCard() {
                     <button
                       onClick={() => dismiss(item.id)}
                       disabled={loading}
-                      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-700 ring-1 ring-sky-100 disabled:opacity-50 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-white/10"
+                      className="sb-chip rounded-full px-4 py-2 text-xs font-semibold disabled:opacity-50"
                     >
                       Dismiss
                     </button>
@@ -301,7 +301,7 @@ export function BrainInboxCard() {
         })}
 
         {!items.length ? (
-          <p className="rounded-[1.5rem] bg-sky-50 p-4 text-sm text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400">
+          <p className="sb-soft-card rounded-[1.35rem] p-4 text-sm text-white/50">
             Inbox is clear.
           </p>
         ) : null}

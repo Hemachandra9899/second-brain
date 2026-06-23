@@ -236,10 +236,10 @@ export function AssistantScreen() {
     <main
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
-      className="min-h-[100dvh] bg-sky-50 text-zinc-950 transition-colors dark:bg-[#050505] dark:text-white"
+      className="sb-shell text-white"
     >
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-gradient-to-b from-blue-100 via-blue-50 to-white shadow-2xl dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-sky-100 bg-sky-50/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/5 bg-[#050505]/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-2xl">
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push("/home")}
@@ -250,8 +250,8 @@ export function AssistantScreen() {
             </button>
 
             <div className="text-center">
-              <p className="font-display text-lg tracking-[-0.03em] text-zinc-950 dark:text-white">
-                Brain
+              <p className="text-sm font-semibold tracking-[0.18em] text-white/80">
+                BRAIN
               </p>
             </div>
 
@@ -276,12 +276,12 @@ export function AssistantScreen() {
         <section className="flex-1 overflow-y-auto px-4 pb-32 pt-24">
           {!hasStarted ? (
             <div className="pb-5 transition-all duration-300">
-              <h1 className="font-display mx-auto max-w-sm text-center text-5xl leading-[0.98] tracking-[-0.05em] text-zinc-950 dark:text-white">
-                What should we think through today?
+              <h1 className="mx-auto max-w-sm text-center text-[3.25rem] font-semibold leading-[0.95] tracking-[-0.075em] text-white">
+                What should we think through?
               </h1>
 
-              <p className="mx-auto mt-4 max-w-xs text-center text-sm leading-6 text-zinc-600">
-                Ask, capture, plan, search memory, or send commands with /.
+              <p className="mx-auto mt-4 max-w-xs text-center text-[15px] leading-6 text-white/50">
+                Ask, capture, search memory, or turn thoughts into action.
               </p>
 
               {!signedIn ? (
@@ -379,7 +379,7 @@ export function AssistantScreen() {
           </div>
         </section>
 
-        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-white via-white/95 to-white/40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 dark:from-zinc-950 dark:via-zinc-950/95 dark:to-zinc-950/40">
+        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-6">
           {trayOpen ? (
             <CommandTray input={input} onSelect={insertCommand} />
           ) : null}
@@ -387,7 +387,7 @@ export function AssistantScreen() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setActionsOpen(true)}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-600 text-3xl text-white shadow-lg transition active:scale-95"
+              className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg transition active:scale-95"
               aria-label="Open actions"
             >
               +
@@ -395,7 +395,7 @@ export function AssistantScreen() {
 
             <form
               onSubmit={submit}
-              className="flex min-w-0 flex-1 items-center rounded-full bg-white px-5 py-4 shadow-lg"
+              className="flex min-w-0 flex-1 items-center rounded-[1.35rem] border border-white/10 bg-[#121212] px-4 py-3 shadow-2xl"
             >
               <input
                 id="assistant-input"
@@ -406,13 +406,13 @@ export function AssistantScreen() {
                   setTrayOpen(shouldShowCommandTray(value));
                 }}
                 placeholder="Ask, /command, or @mention..."
-                className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-zinc-800 outline-none placeholder:text-zinc-400"
+                className="min-w-0 flex-1 bg-transparent text-[15.5px] font-medium text-white outline-none placeholder:text-white/28"
               />
 
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="ml-3 text-2xl text-blue-600 disabled:opacity-30"
+                className="ml-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-xl text-black disabled:opacity-25"
                 aria-label="Send"
               >
                 ↗
