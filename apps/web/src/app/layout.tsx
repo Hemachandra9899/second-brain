@@ -10,15 +10,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "B",
-  description: "Your personal second brain.",
+  title: "Second Brain",
+  description: "Your personal AI workspace for memory, tasks, notes, and Notion.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body>

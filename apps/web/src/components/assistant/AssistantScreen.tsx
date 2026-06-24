@@ -3,35 +3,27 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { askAssistant, askBrain } from "@/lib/api";
+import { askAssistant, askBrain, getRecentActivity } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
-import {
-  CommandTray,
-  insertCommandToken,
-  shouldShowCommandTray,
-} from "@/components/assistant/CommandTray";
+import { CommandTray, insertCommandToken, shouldShowCommandTray } from "@/components/assistant/CommandTray";
 import { TypingBubble } from "@/components/assistant/TypingBubble";
-import {
-  NotionPageCard,
-  SourceCards,
-  TaskResultCard,
-} from "@/components/assistant/ActionCards";
+import { NotionPageCard, SourceCards, TaskResultCard } from "@/components/assistant/ActionCards";
 import { TaskChoiceCards } from "@/components/assistant/TaskChoiceCards";
 import { TodoPageCard } from "@/components/assistant/TodoPageCard";
+import { SavedInsightsDrawer } from "@/components/assistant/SavedInsightsDrawer";
 import type {
   AssistantResponse,
   BrainAskResponse,
   CreatedTaskCardData,
   NotionPageCardData,
-  NotionTodoPageData,
   NotionTodoItemData,
+  NotionTodoPageData,
   TaskChoice,
   ActivityEvent,
 } from "@/lib/api";
-import { getRecentActivity } from "@/lib/api";
-import { SavedInsightsDrawer } from "@/components/assistant/SavedInsightsDrawer";
 
 type Message = {
   role: "user" | "assistant";
@@ -39,51 +31,31 @@ type Message = {
   notion_page?: NotionPageCardData | null;
   created_task?: CreatedTaskCardData | null;
   task_choices?: TaskChoice[];
-  sources?: {
-    title: string;
-    url?: string | null;
-    id?: string | null;
-    type: string;
-    preview?: string | null;
-  }[];
+  sources?: { title: string; url?: string | null; id?: string | null; type: string; preview?: string | null }[];
   notion_todo_page?: NotionTodoPageData | null;
   notion_todo_items?: NotionTodoItemData[];
 };
 
 const starterChips = [
-  "Plan my day",
-  "Run Dream Mode",
-  "Think about my brain",
-  "Create a task",
-  "Search memory",
-  "Connect Notion",
+  "/today Give me my Today Brief",
+  "@memory What should I remember?",
+  "@notion Create a page from this idea",
+  "Create a task for today",
 ];
 
-const quickCards = [
-  {
-    title: "Today Brief",
-    body: "Summarize tasks, mood, projects, and next action.",
-    prompt: "/today Give me my Today Brief.",
-  },
-  {
-    title: "Notion Task",
-    body: "Create tasks in Notion after connecting workspace.",
-    prompt: "/notion Create a task for today: review my Second Brain demo.",
-  },
+const actionItems: [string, string, string][] = [
+  ["Home", "/home", "Open your command center"],
+  ["Capture", "/capture", "Save any thought quickly"],
+  ["Memory", "/memory", "Browse saved memory"],
+  ["Tasks", "/tasks", "Review open work"],
+  ["Projects", "/projects", "See project spaces"],
+  ["Notion", "/settings/integrations", "Connect workspace"],
 ];
 
 export function AssistantScreen() {
   const router = useRouter();
   const bottomRef = useRef<HTMLDivElement | null>(null);
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "Hey, I'm your Second Brain. Ask me anything, capture a thought, or plan your day.",
-    },
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -95,28 +67,26 @@ export function AssistantScreen() {
 
   const user = getStoredUser();
   const signedIn = isSignedIn();
-  const hasStarted = messages.length > 1;
+  const hasStarted = messages.length > 0;
+
+  useEffect(() => {
+    const seen = typeof window !== "undefined" && localStorage.getItem("sb_onboarding_done") === "1";
+    if (!isSignedIn() && !seen) router.replace("/onboarding");
+  }, [router]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, loading]);
 
   useEffect(() => {
-    getRecentActivity()
-      .then(setActivityEvents)
-      .catch(() => setActivityEvents([]));
+    getRecentActivity().then(setActivityEvents).catch(() => setActivityEvents([]));
   }, []);
 
   function shouldUseBrainAsk(message: string) {
     const text = message.trim().toLowerCase();
     return (
-      text.includes("@memory") ||
-      text.includes("@notion") ||
-      text.includes("@tasks") ||
-      text.includes("@writing") ||
-      text.startsWith("/memory") ||
-      text.startsWith("/today") ||
-      text.startsWith("/write")
+      text.includes("@memory") || text.includes("@notion") || text.includes("@tasks") || text.includes("@writing") ||
+      text.startsWith("/memory") || text.startsWith("/today") || text.startsWith("/write")
     );
   }
 
@@ -130,31 +100,21 @@ export function AssistantScreen() {
   }
 
   function addAssistantMessage(content: string) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content,
-      },
-    ]);
+    setMessages((prev) => [...prev, { role: "assistant", content }]);
   }
 
   function getNotionPage(res: AssistantResponse | BrainAskResponse) {
     return "notion_page" in res ? res.notion_page || null : null;
   }
-
   function getCreatedTask(res: AssistantResponse | BrainAskResponse) {
     return "created_task" in res ? res.created_task || null : null;
   }
-
   function getTaskChoices(res: AssistantResponse | BrainAskResponse) {
     return "task_choices" in res ? res.task_choices || [] : [];
   }
-
   function getNotionTodoPage(res: AssistantResponse | BrainAskResponse) {
     return "notion_todo_page" in res ? res.notion_todo_page || null : null;
   }
-
   function getNotionTodoItems(res: AssistantResponse | BrainAskResponse) {
     return "notion_todo_items" in res ? res.notion_todo_items || [] : [];
   }
@@ -162,8 +122,8 @@ export function AssistantScreen() {
   async function sendMessage(text?: string) {
     const content = (text || input).trim();
     if (!content || loading) return;
-
     setInput("");
+    setTrayOpen(false);
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", content }]);
 
@@ -186,14 +146,7 @@ export function AssistantScreen() {
         },
       ]);
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "I could not reach the backend yet. Once Render is healthy, I'll answer using your Second Brain.",
-        },
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "I could not reach the backend yet. Once the API is healthy, I’ll answer using your Second Brain." }]);
     } finally {
       setLoading(false);
     }
@@ -201,18 +154,13 @@ export function AssistantScreen() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    setTrayOpen(false);
     sendMessage();
   }
 
   function insertCommand(value: string) {
     setInput((prev) => insertCommandToken(prev, value));
     setTrayOpen(false);
-
-    requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLInputElement>("#assistant-input");
-      el?.focus();
-    });
+    requestAnimationFrame(() => document.querySelector<HTMLInputElement>("#assistant-input")?.focus());
   }
 
   function onTouchStart(e: React.TouchEvent) {
@@ -221,112 +169,45 @@ export function AssistantScreen() {
 
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX === null) return;
-
     const endX = e.changedTouches[0].clientX;
-    const delta = endX - touchStartX;
-
-    if (touchStartX < 40 && delta > 80) {
-      setDrawerOpen(true);
-    }
-
+    if (touchStartX < 40 && endX - touchStartX > 80) setDrawerOpen(true);
     setTouchStartX(null);
   }
 
   return (
-    <main
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      className="sb-shell text-white"
-    >
+    <main onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="sb-shell text-white">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col">
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md border-b border-white/5 bg-[#050505]/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-2xl">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.push("/home")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-zinc-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
-              aria-label="Go home"
-            >
-              ‹
-            </button>
-
-            <div className="text-center">
-              <p className="text-sm font-semibold tracking-[0.18em] text-white/80">
-                BRAIN
-              </p>
-            </div>
-
-            <button
-              onClick={() => setProfileOpen(true)}
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/85 text-sm font-semibold text-zinc-900 shadow-sm transition active:scale-95 dark:bg-zinc-900 dark:text-white"
-              aria-label="Open profile"
-            >
-              {user?.picture ? (
-                <img
-                  src={user.picture}
-                  alt={user.name || "Profile"}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                "•••"
-              )}
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md px-4 pt-[calc(env(safe-area-inset-top)+0.9rem)]">
+          <div className="sb-glass flex items-center justify-between rounded-[1.6rem] px-3 py-2.5">
+            <Link href="/home" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-white">‹</Link>
+            <BrandLogo size="sm" showText />
+            <button onClick={() => setProfileOpen(true)} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm font-bold text-white" aria-label="Open profile">
+              {user?.picture ? <img src={user.picture} alt={user.name || "Profile"} className="h-full w-full object-cover" /> : "••"}
             </button>
           </div>
         </header>
 
-        <section className="flex-1 overflow-y-auto px-4 pb-32 pt-24">
+        <section className="flex-1 overflow-y-auto px-4 pb-36 pt-28">
           {!hasStarted ? (
-            <div className="pb-5 transition-all duration-300">
-              <h1 className="mx-auto max-w-sm text-center text-[3.25rem] font-semibold leading-[0.95] tracking-[-0.075em] text-white">
-                What should we think through?
+            <div className="flex min-h-[calc(100dvh-15rem)] flex-col justify-center pb-8 text-center sb-fade-up">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200/70">Second Brain chat</p>
+              <h1 className="mx-auto mt-4 max-w-sm text-[3.35rem] font-semibold leading-[0.92] tracking-[-0.085em] text-white">
+                What can I help you remember?
               </h1>
-
-              <p className="mx-auto mt-4 max-w-xs text-center text-[15px] leading-6 text-white/50">
-                Ask, capture, search memory, or turn thoughts into action.
+              <p className="mx-auto mt-5 max-w-xs text-[15px] leading-6 text-white/48">
+                Ask, capture, search memory, create tasks, or send things to Notion.
               </p>
 
               {!signedIn ? (
-                <div className="mt-5 rounded-[1.75rem] bg-white/85 p-4 shadow-sm backdrop-blur">
-                  <p className="text-sm font-semibold text-zinc-900">
-                    Sign in to save memory
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-600">
-                    Keep tasks, notes, mood, projects, and graph memory private.
-                  </p>
-                  <Link
-                    href="/login"
-                    className="mt-3 inline-flex rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
-                  >
-                    Continue with Google
-                  </Link>
-                </div>
+                <Link href="/login" className="mx-auto mt-7 inline-flex rounded-full bg-white px-5 py-3 text-sm font-black text-black">
+                  Continue with Google
+                </Link>
               ) : null}
 
-              <div className="mt-6 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none]">
+              <div className="mt-8 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {starterChips.map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => sendMessage(chip)}
-                    className="shrink-0 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition active:scale-95"
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                {quickCards.map((card) => (
-                  <button
-                    key={card.title}
-                    onClick={() => sendMessage(card.prompt)}
-                    className="rounded-[1.75rem] bg-white/90 p-4 text-left shadow-sm transition active:scale-[0.98]"
-                  >
-                    <div className="mb-4 h-20 rounded-[1.25rem] bg-gradient-to-br from-blue-100 via-blue-50 to-white" />
-                    <p className="text-lg font-semibold tracking-tight">
-                      {card.title}
-                    </p>
-                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-zinc-600">
-                      {card.body}
-                    </p>
+                  <button key={chip} onClick={() => sendMessage(chip)} className="shrink-0 rounded-full border border-white/10 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-white/75 active:scale-95">
+                    {chip.replace("/today ", "")}
                   </button>
                 ))}
               </div>
@@ -336,67 +217,28 @@ export function AssistantScreen() {
           <div className="space-y-3">
             {messages.map((message, index) => (
               <div key={index}>
-                <ChatBubble
-                  role={message.role}
-                  content={message.content}
-                />
-
+                <ChatBubble role={message.role} content={message.content} />
                 {message.role === "assistant" ? (
                   <div className="mr-auto max-w-[88%]">
-                    {message.created_task ? (
-                      <TaskResultCard task={message.created_task} />
-                    ) : null}
-
-                    {message.task_choices?.length ? (
-                      <TaskChoiceCards
-                        tasks={message.task_choices}
-                        onCompleted={addAssistantMessage}
-                      />
-                    ) : null}
-
-                    {message.notion_page ? (
-                      <NotionPageCard page={message.notion_page} />
-                    ) : null}
-
-                    {message.notion_todo_page && message.notion_todo_items ? (
-                      <TodoPageCard
-                        page={message.notion_todo_page}
-                        items={message.notion_todo_items}
-                      />
-                    ) : null}
-
+                    {message.created_task ? <TaskResultCard task={message.created_task} /> : null}
+                    {message.task_choices?.length ? <TaskChoiceCards tasks={message.task_choices} onCompleted={addAssistantMessage} /> : null}
+                    {message.notion_page ? <NotionPageCard page={message.notion_page} /> : null}
+                    {message.notion_todo_page && message.notion_todo_items ? <TodoPageCard page={message.notion_todo_page} items={message.notion_todo_items} /> : null}
                     <SourceCards sources={message.sources} />
                   </div>
                 ) : null}
               </div>
             ))}
-
-            {loading ? (
-              <TypingBubble />
-            ) : null}
-
+            {loading ? <TypingBubble /> : null}
             <div ref={bottomRef} />
           </div>
         </section>
 
-        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-6">
-          {trayOpen ? (
-            <CommandTray input={input} onSelect={insertCommand} />
-          ) : null}
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setActionsOpen(true)}
-              className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-white text-3xl text-black shadow-lg transition active:scale-95"
-              aria-label="Open actions"
-            >
-              +
-            </button>
-
-            <form
-              onSubmit={submit}
-              className="flex min-w-0 flex-1 items-center rounded-[1.35rem] border border-white/10 bg-[#121212] px-4 py-3 shadow-2xl"
-            >
+        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-[#050608] via-[#050608]/96 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-8">
+          {trayOpen ? <CommandTray input={input} onSelect={insertCommand} /> : null}
+          <div className="flex items-center gap-3 rounded-[1.7rem] border border-white/10 bg-white/[0.07] p-2 shadow-2xl backdrop-blur-2xl">
+            <button onClick={() => setActionsOpen(true)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-black active:scale-95" aria-label="Open actions">+</button>
+            <form onSubmit={submit} className="flex min-w-0 flex-1 items-center">
               <input
                 id="assistant-input"
                 value={input}
@@ -405,82 +247,35 @@ export function AssistantScreen() {
                   setInput(value);
                   setTrayOpen(shouldShowCommandTray(value));
                 }}
-                placeholder="Ask, /command, or @mention..."
-                className="min-w-0 flex-1 bg-transparent text-[15.5px] font-medium text-white outline-none placeholder:text-white/28"
+                placeholder="Ask anything..."
+                className="min-w-0 flex-1 bg-transparent px-1 text-[15.5px] font-medium text-white outline-none placeholder:text-white/28"
               />
-
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="ml-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-xl text-black disabled:opacity-25"
-                aria-label="Send"
-              >
-                ↗
-              </button>
+              <button type="submit" disabled={loading || !input.trim()} className="ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-black disabled:opacity-25" aria-label="Send">↑</button>
             </form>
           </div>
         </footer>
 
-        {actionsOpen ? (
-          <ActionsSheet onClose={() => setActionsOpen(false)} />
-        ) : null}
-
-        {profileOpen ? (
-          <ProfileSheet
-            onClose={() => setProfileOpen(false)}
-            signedIn={signedIn}
-            user={user}
-          />
-        ) : null}
-
-        <SavedInsightsDrawer
-          open={drawerOpen}
-          events={activityEvents.filter((event) =>
-            ["notion_page_created", "writing_saved", "memory_card_created"].includes(
-              event.event_type
-            )
-          )}
-          onClose={() => setDrawerOpen(false)}
-        />
+        {actionsOpen ? <ActionsSheet onClose={() => setActionsOpen(false)} /> : null}
+        {profileOpen ? <ProfileSheet onClose={() => setProfileOpen(false)} signedIn={signedIn} user={user} /> : null}
+        <SavedInsightsDrawer open={drawerOpen} events={activityEvents.filter((event) => ["notion_page_created", "writing_saved", "memory_card_created"].includes(event.event_type))} onClose={() => setDrawerOpen(false)} />
       </div>
     </main>
   );
 }
 
 function ActionsSheet({ onClose }: { onClose: () => void }) {
-  const items: [string, string][] = [
-    ["Home overview", "/home"],
-    ["Capture anything", "/capture"],
-    ["Import Instagram ZIP", "/imports/instagram"],
-    ["Memory cards", "/memory"],
-    ["Projects", "/projects"],
-    ["Tasks", "/tasks"],
-    ["Knowledge base", "/knowledge"],
-    ["Mood", "/mood"],
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom-4 duration-200">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-4 backdrop-blur-sm">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] border border-white/10 bg-[#090c10] p-5 shadow-2xl sb-fade-up">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-semibold">Actions</p>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-zinc-100 px-3 py-1 text-sm"
-          >
-            Close
-          </button>
+          <p className="text-xl font-semibold tracking-[-0.05em] text-white">Actions</p>
+          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/70">Close</button>
         </div>
-
-        <div className="grid gap-2">
-          {items.map(([label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-zinc-700"
-            >
-              {label}
+        <div className="grid grid-cols-2 gap-3">
+          {actionItems.map(([label, href, body]) => (
+            <Link key={href} href={href} onClick={onClose} className="rounded-[1.35rem] border border-white/10 bg-white/[0.055] p-4 text-left active:scale-[0.98]">
+              <p className="font-semibold text-white">{label}</p>
+              <p className="mt-1 text-xs leading-5 text-white/42">{body}</p>
             </Link>
           ))}
         </div>
@@ -501,85 +296,34 @@ function ProfileSheet({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/25 p-4 backdrop-blur-sm">
-      <div className="mx-auto w-full max-w-md rounded-t-[2rem] bg-white p-5 shadow-2xl dark:bg-zinc-900">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-4 backdrop-blur-sm">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] border border-white/10 bg-[#090c10] p-5 shadow-2xl sb-fade-up">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-lg font-semibold text-zinc-950 dark:text-white">
-            Profile
-          </p>
-
-          <button
-            onClick={onClose}
-            className="rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-          >
-            Close
-          </button>
+          <p className="text-xl font-semibold tracking-[-0.05em] text-white">Profile</p>
+          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/70">Close</button>
         </div>
 
         {signedIn ? (
-          <div className="rounded-[1.5rem] bg-blue-50 p-4 dark:bg-zinc-800">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-4">
             <div className="flex items-center gap-3">
-              {user?.picture ? (
-                <img
-                  src={user.picture}
-                  alt={user.name || "Profile"}
-                  className="h-12 w-12 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-sm font-bold text-white dark:bg-white dark:text-black">
-                  U
-                </div>
-              )}
-
+              {user?.picture ? <img src={user.picture} alt={user.name || "Profile"} className="h-12 w-12 rounded-full object-cover" /> : <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-black text-black">U</div>}
               <div className="min-w-0">
-                <p className="truncate font-semibold text-zinc-950 dark:text-white">
-                  {user?.name || "Signed in"}
-                </p>
-                <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                  {user?.email}
-                </p>
+                <p className="truncate font-semibold text-white">{user?.name || "Signed in"}</p>
+                <p className="truncate text-xs text-white/42">{user?.email}</p>
               </div>
             </div>
           </div>
         ) : (
-          <Link
-            href="/login"
-            className="block rounded-full bg-black px-5 py-3 text-center text-sm font-semibold text-white dark:bg-white dark:text-black"
-          >
-            Continue with Google
-          </Link>
+          <Link href="/login" className="block rounded-full bg-white px-5 py-3 text-center text-sm font-black text-black">Continue with Google</Link>
         )}
 
         <div className="mt-4 grid gap-2">
-          <button
-            onClick={toggleTheme}
-            className="rounded-2xl bg-zinc-100 px-4 py-3 text-left text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-          >
+          <button onClick={toggleTheme} className="rounded-2xl bg-white/[0.055] px-4 py-3 text-left text-sm font-semibold text-white/72">
             {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           </button>
-
-          <Link
-            href="/settings/integrations"
-            className="rounded-2xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-          >
-            Connect Notion
-          </Link>
-
-          <Link
-            href="/imports/instagram"
-            className="rounded-2xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-          >
-            Upload Instagram export
-          </Link>
-
-          {signedIn ? (
-            <button
-              onClick={logout}
-              className="rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-medium text-red-600 dark:bg-red-950/30"
-            >
-              Logout
-            </button>
-          ) : null}
+          <Link href="/settings/integrations" className="rounded-2xl bg-white/[0.055] px-4 py-3 text-sm font-semibold text-white/72">Connect Notion</Link>
+          <Link href="/imports/instagram" className="rounded-2xl bg-white/[0.055] px-4 py-3 text-sm font-semibold text-white/72">Upload Instagram export</Link>
+          {signedIn ? <button onClick={logout} className="rounded-2xl bg-white/[0.055] px-4 py-3 text-left text-sm font-semibold text-red-200">Logout</button> : null}
         </div>
       </div>
     </div>
