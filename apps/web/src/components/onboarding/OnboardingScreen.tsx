@@ -41,7 +41,7 @@ export function OnboardingScreen() {
     <main className="sb-shell flex min-h-[100dvh] items-center justify-center px-5 py-8 text-white">
       <section className="mx-auto flex min-h-[88dvh] w-full max-w-md flex-col">
         <header className="flex items-center justify-between">
-          <BrandLogo size="sm" wordmark />
+          <BrandLogo size="sm" />
           <Link href="/login" className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-bold text-white/70">
             Skip
           </Link>

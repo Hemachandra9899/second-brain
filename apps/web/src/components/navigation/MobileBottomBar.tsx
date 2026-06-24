@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
-  { label: "Home", href: "/home", icon: "⌂", matches: ["/home"] },
-  { label: "AI", href: "/", icon: "✦", matches: ["/"] },
+  { label: "Home", href: "/home", icon: "⌂", match: ["/home"] },
+  { label: "AI", href: "/", icon: "✦", match: ["/"] },
   {
     label: "Features",
     href: "/features",
     icon: "▦",
-    matches: [
+    match: [
       "/features",
       "/capture",
       "/memory",
@@ -18,44 +18,42 @@ const tabs = [
       "/settings",
       "/projects",
       "/knowledge",
-      "/writing",
       "/mood",
+      "/writing",
       "/imports",
     ],
   },
 ];
 
+function isActive(pathname: string, tab: (typeof tabs)[number]) {
+  if (tab.href === "/") return pathname === "/";
+  return tab.match.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 export function MobileBottomBar() {
   const pathname = usePathname();
 
-  function isActive(tab: (typeof tabs)[number]) {
-    if (tab.href === "/") return pathname === "/";
-    return tab.matches.some((match) => pathname === match || pathname.startsWith(`${match}/`));
-  }
-
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-      <div className="sb-bottom-blur rounded-[2rem] border border-white/10 p-1.5 shadow-[0_18px_70px_rgba(0,0,0,0.55)]">
-        <div className="grid grid-cols-3 gap-1.5">
-          {tabs.map((tab) => {
-            const active = isActive(tab);
+    <nav className="fixed inset-x-0 bottom-0 z-[80] mx-auto w-full max-w-md border-t border-white/10 bg-[#090b0f]/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-22px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+      <div className="grid grid-cols-3 gap-2">
+        {tabs.map((tab) => {
+          const active = isActive(pathname, tab);
 
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={
-                  active
-                    ? "flex flex-col items-center justify-center rounded-[1.55rem] bg-white px-4 py-3 text-black shadow-xl transition-all duration-300"
-                    : "flex flex-col items-center justify-center rounded-[1.55rem] px-4 py-3 text-white/48 transition-all duration-300 active:scale-95"
-                }
-              >
-                <span className="text-lg leading-none">{tab.icon}</span>
-                <span className="mt-1 text-[11px] font-bold">{tab.label}</span>
-              </Link>
-            );
-          })}
-        </div>
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={
+                active
+                  ? "flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-sm font-extrabold text-black transition duration-300 active:scale-95"
+                  : "flex h-14 items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white/50 transition duration-300 active:scale-95 hover:bg-white/10 hover:text-white"
+              }
+            >
+              <span className="text-base leading-none">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

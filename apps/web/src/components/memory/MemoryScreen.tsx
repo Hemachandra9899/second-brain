@@ -18,7 +18,9 @@ export function MemoryScreen() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function handleConsolidate() {
     setConsolidating(true);
@@ -36,38 +38,35 @@ export function MemoryScreen() {
   }
 
   return (
-    <AppShell title="Memory cards" eyebrow="Long-term context">
-      <section className="-mx-5 mb-6 flex gap-3 overflow-x-auto px-5 pb-3 no-scrollbar sb-card-scroll">
-        <GlassCard className="w-[19rem] shrink-0">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100/62">Important</p>
-          <h2 className="mt-4 text-3xl font-black leading-none tracking-[-0.07em] text-white">Build clean long-term memory</h2>
-          <p className="mt-3 text-sm leading-6 text-white/52">Consolidate recent tasks and notes into durable memory cards.</p>
-          <button onClick={handleConsolidate} disabled={consolidating} className="mt-5 w-full rounded-full bg-white px-5 py-3 text-sm font-black text-black disabled:opacity-50">
-            {consolidating ? "Consolidating..." : "Consolidate memories →"}
-          </button>
-        </GlassCard>
-        <GlassCard className="w-[15rem] shrink-0">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100/62">Count</p>
-          <h2 className="mt-8 text-6xl font-black tracking-[-0.08em] text-white">{cards.length}</h2>
-          <p className="mt-2 text-sm text-white/45">saved memory cards</p>
-        </GlassCard>
+    <AppShell title="Memory">
+      <section className="mb-6">
+        <p className="text-[11px] font-black uppercase tracking-[0.34em] text-cyan-200/70">Recall</p>
+        <h1 className="mt-3 text-[2.2rem] font-black leading-[0.96] tracking-[-0.07em] text-white">Memory cards</h1>
+        <p className="mt-4 text-sm leading-6 text-white/50">Consolidate raw captures into durable long-term memories.</p>
       </section>
 
-      <section className="grid gap-4">
-        {cards.map((card) => (
-          <GlassCard key={card.id}>
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100/62">Memory Card</p>
-            <h3 className="mt-3 text-2xl font-black leading-tight tracking-[-0.06em] text-white">{card.title}</h3>
-            <p className="mt-3 line-clamp-4 text-sm leading-6 text-white/52">{card.summary}</p>
+      <GlassCard className="mb-5 bg-gradient-to-br from-blue-300/20 via-white/[0.07] to-cyan-500/20">
+        <p className="text-sm leading-6 text-white/60">Run consolidation periodically to clean recent tasks and notes into long-term memory cards.</p>
+        <button onClick={handleConsolidate} disabled={consolidating} className="mt-4 w-full rounded-full bg-white px-5 py-3 text-sm font-black text-black disabled:opacity-50">
+          {consolidating ? "Consolidating..." : "Consolidate memories →"}
+        </button>
+      </GlassCard>
+
+      <section className="space-y-3">
+        {cards.map((card, index) => (
+          <GlassCard key={card.id} className={index % 2 ? "bg-gradient-to-br from-violet-300/10 via-white/[0.07] to-cyan-500/10" : "bg-gradient-to-br from-cyan-300/10 via-white/[0.07] to-emerald-500/10"}>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/75">Memory Card</p>
+            <h3 className="mt-3 text-xl font-black leading-tight text-white">{card.title}</h3>
+            <p className="mt-3 line-clamp-4 text-sm leading-6 text-white/50">{card.summary}</p>
             {card.tags?.length ? (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {card.tags.map((tag) => <span key={tag} className="rounded-full bg-cyan-100/14 px-3 py-1 text-xs font-bold text-cyan-100">{tag}</span>)}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {card.tags.map((tag) => <span key={tag} className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-cyan-100/80">{tag}</span>)}
               </div>
             ) : null}
-            <button onClick={() => handleDelete(card.id)} className="mt-5 rounded-full bg-rose-100/14 px-4 py-2 text-xs font-bold text-rose-100">Delete</button>
+            <button onClick={() => handleDelete(card.id)} className="mt-4 rounded-full bg-rose-300/20 px-4 py-2 text-xs font-black text-rose-100">Delete</button>
           </GlassCard>
         ))}
-        {!cards.length ? <GlassCard><p className="text-sm text-white/55">No memory cards yet. Run consolidation to create them.</p></GlassCard> : null}
+        {!cards.length ? <GlassCard><p className="text-sm text-white/50">No memory cards yet. Run consolidation to create them.</p></GlassCard> : null}
       </section>
     </AppShell>
   );

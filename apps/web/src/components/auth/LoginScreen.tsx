@@ -26,7 +26,7 @@ export function LoginScreen() {
         </header>
 
         <div className="flex flex-1 flex-col justify-center sb-fade-up">
-          <BrandLogo size="lg" wordmark />
+          <BrandLogo size="lg" />
 
           <h1 className="mt-12 text-[3.35rem] font-black leading-[0.92] tracking-[-0.085em] text-white">
             Enter your Second Brain

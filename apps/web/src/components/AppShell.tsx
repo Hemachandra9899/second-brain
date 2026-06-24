@@ -1,67 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
-import { getStoredUser, isSignedIn, logout, type StoredUser } from "@/lib/auth";
+import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
 
 type AppShellProps = {
   title?: string;
-  eyebrow?: string;
   children: ReactNode;
 };
 
-export function AppShell({ title, eyebrow = "Second Brain", children }: AppShellProps) {
-  const [user, setUser] = useState<StoredUser | null>(null);
-  const [signedIn, setSignedIn] = useState(false);
-
-  useEffect(() => {
-    setUser(getStoredUser());
-    setSignedIn(isSignedIn());
-  }, []);
+export function AppShell({ title, children }: AppShellProps) {
+  const user = getStoredUser();
+  const signedIn = isSignedIn();
 
   return (
-    <main className="sb-netflix-shell min-h-[100dvh] text-white">
-      <div className="mx-auto min-h-[100dvh] w-full max-w-md px-5 pb-32 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
-        <header className="mb-10 flex items-center justify-between">
-          <Link href="/home" aria-label="Home">
+    <main className="sb-shell min-h-[100dvh] text-white">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-md px-5 pb-28 pt-[calc(env(safe-area-inset-top)+1rem)]">
+        <header className="mb-8 flex items-center justify-between">
+          <Link href="/home" className="flex items-center gap-3 active:scale-95">
             <BrandLogo size="sm" />
+            <div className="leading-none">
+              <p className="text-[13px] font-black tracking-[-0.03em] text-white">Second Brain</p>
+              <p className="mt-1 text-[9px] font-black uppercase tracking-[0.32em] text-cyan-200/60">{title || "Personal AI"}</p>
+            </div>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] border border-white/10 bg-white/9 text-lg text-white backdrop-blur-xl"
               aria-label="Open AI"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-lg text-white shadow-lg shadow-black/30 active:scale-95"
             >
               ✦
             </Link>
 
-            {signedIn && user?.picture ? (
-              <button onClick={logout} className="h-11 w-11 overflow-hidden rounded-full border border-white/10" aria-label="Log out">
-                <img src={user.picture} alt={user.name || "Profile"} className="h-full w-full object-cover" />
-              </button>
-            ) : signedIn ? (
-              <button onClick={logout} className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-200 text-sm font-black text-black" aria-label="Log out">
-                {(user?.name || "U").charAt(0)}
+            {signedIn ? (
+              <button
+                onClick={logout}
+                className="flex h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-2.5 text-xs font-bold text-white/80 active:scale-95"
+              >
+                {user?.picture ? <img src={user.picture} alt="" className="h-7 w-7 rounded-full object-cover" /> : null}
+                <span>Out</span>
               </button>
             ) : (
-              <Link href="/login" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
+              <Link href="/login" className="rounded-2xl bg-white px-4 py-3 text-xs font-black text-black active:scale-95">
                 Sign in
               </Link>
             )}
           </div>
         </header>
-
-        {title ? (
-          <section className="mb-7 sb-fade-up">
-            <p className="text-xs font-black uppercase tracking-[0.34em] text-cyan-200/75">{eyebrow}</p>
-            <h1 className="mt-4 text-[3.4rem] font-black leading-[0.92] tracking-[-0.085em] text-white">
-              {title}
-            </h1>
-          </section>
-        ) : null}
 
         {children}
       </div>
