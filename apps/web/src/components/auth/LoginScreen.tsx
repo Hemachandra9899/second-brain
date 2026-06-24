@@ -15,47 +15,33 @@ export function LoginScreen() {
   }, [router]);
 
   return (
-    <main className="sb-shell min-h-[100dvh] px-5 py-6">
-      <section className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-md flex-col">
+    <main className="sb-shell flex min-h-[100dvh] items-center justify-center px-5 py-8 text-white">
+      <section className="mx-auto flex min-h-[86dvh] w-full max-w-md flex-col">
         <header className="flex items-center justify-between">
-          <Link
-            href="/onboarding"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-2xl text-white"
-          >
+          <Link href="/onboarding" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/8 text-2xl text-white">
             ‹
           </Link>
           <BrandLogo size="sm" />
-          <div className="h-11 w-11" />
+          <Link href="/home" className="text-sm font-bold text-white/50">Preview</Link>
         </header>
 
         <div className="flex flex-1 flex-col justify-center sb-fade-up">
-          <div className="mx-auto mb-10 flex justify-center">
-            <BrandLogo size="lg" />
-          </div>
+          <BrandLogo size="lg" wordmark />
 
-          <p className="text-center text-xs font-black uppercase tracking-[0.22em] text-cyan-200/80">
-            Private memory starts here
-          </p>
-          <h1 className="mx-auto mt-4 max-w-sm text-center text-[3.35rem] font-semibold leading-[0.92] tracking-[-0.08em] text-white">
+          <h1 className="mt-12 text-[3.35rem] font-black leading-[0.92] tracking-[-0.085em] text-white">
             Enter your Second Brain
           </h1>
-          <p className="mx-auto mt-5 max-w-xs text-center text-[15px] leading-6 text-white/54">
-            Sign in to save memory, sync Notion, manage tasks, and continue your personal AI workspace.
+          <p className="mt-5 max-w-sm text-base leading-7 text-white/58">
+            Save private memories, sync Notion, create tasks, and ask your personal AI workspace.
           </p>
 
-          <div className="mt-12 rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur-2xl">
+          <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/7 p-4 backdrop-blur-2xl">
             <GoogleLoginCard />
-            <p className="mt-4 text-center text-xs leading-5 text-white/38">
-              Your memory, tasks, projects, and integrations stay private to your account.
+            <p className="mt-4 px-3 text-center text-xs leading-5 text-white/42">
+              Google sign-in protects your memory, tasks, and Notion workspace.
             </p>
           </div>
         </div>
-
-        <footer className="flex justify-center gap-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-xs text-white/36">
-          <span>Privacy</span>
-          <span>Terms</span>
-          <span>Security</span>
-        </footer>
       </section>
     </main>
   );

@@ -2,112 +2,71 @@
 
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
-import { useMoodTheme } from "@/hooks/useMoodTheme";
-import { SecondBrainLogo } from "@/components/layout/SecondBrainLogo";
-
-type UserInfo = {
-  id: string;
-  email: string;
-  name: string;
-  picture?: string;
-};
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
+import { getStoredUser, isSignedIn, logout, type StoredUser } from "@/lib/auth";
 
 type AppShellProps = {
   title?: string;
+  eyebrow?: string;
   children: ReactNode;
 };
 
-export function AppShell({ children }: AppShellProps) {
-  const { theme, mood, loading } = useMoodTheme();
-  const [user, setUser] = useState<UserInfo | null>(null);
+export function AppShell({ title, eyebrow = "Second Brain", children }: AppShellProps) {
+  const [user, setUser] = useState<StoredUser | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem("second_brain_user");
-    if (raw) {
-      try {
-        setUser(JSON.parse(raw));
-      } catch {}
-    }
+    setUser(getStoredUser());
+    setSignedIn(isSignedIn());
   }, []);
 
-  function logout() {
-    localStorage.removeItem("second_brain_token");
-    localStorage.removeItem("second_brain_user");
-    window.location.href = "/";
-  }
-
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${theme.background} text-slate-900 transition-all duration-700`}>
-      <main className="mx-auto min-h-screen w-full max-w-md px-4 py-5 md:max-w-6xl">
-        <header className="mb-8 flex items-center justify-between">
-          <SecondBrainLogo />
+    <main className="sb-netflix-shell min-h-[100dvh] text-white">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-md px-5 pb-32 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+        <header className="mb-10 flex items-center justify-between">
+          <Link href="/home" aria-label="Home">
+            <BrandLogo size="sm" />
+          </Link>
 
           <div className="flex items-center gap-3">
-            {!loading && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-xs shadow-sm capitalize">
-                <span className={`inline-block h-2 w-2 rounded-full ${
-                  mood === "happy" || mood === "calm" ? "bg-emerald-400" :
-                  mood === "sad" || mood === "lonely" ? "bg-cyan-400" :
-                  mood === "anxious" || mood === "stressed" ? "bg-violet-400" :
-                  mood === "angry" || mood === "frustrated" ? "bg-sky-400" :
-                  "bg-slate-400"
-                }`} />
-                {mood}
-              </span>
-            )}
-
             <Link
-              href="/home"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-sm shadow-sm backdrop-blur"
+              href="/"
+              className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] border border-white/10 bg-white/9 text-lg text-white backdrop-blur-xl"
+              aria-label="Open AI"
             >
-              ⌂
+              ✦
             </Link>
 
-            {user ? (
-              <div className="flex items-center gap-2">
-                {user.picture ? (
-                  <img src={user.picture} alt="" className="h-7 w-7 rounded-full" />
-                ) : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-200 text-xs font-medium text-sky-700">
-                    {user.name?.charAt(0) || "?"}
-                  </div>
-                )}
-                <button onClick={logout} className="text-xs text-slate-500 hover:text-slate-700">
-                  Log out
-                </button>
-              </div>
+            {signedIn && user?.picture ? (
+              <button onClick={logout} className="h-11 w-11 overflow-hidden rounded-full border border-white/10" aria-label="Log out">
+                <img src={user.picture} alt={user.name || "Profile"} className="h-full w-full object-cover" />
+              </button>
+            ) : signedIn ? (
+              <button onClick={logout} className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-200 text-sm font-black text-black" aria-label="Log out">
+                {(user?.name || "U").charAt(0)}
+              </button>
             ) : (
-              <Link
-                href="/login"
-                className="rounded-full bg-slate-950 px-4 py-2 text-xs font-medium text-white shadow-sm"
-              >
-                Log in
+              <Link href="/login" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
+                Sign in
               </Link>
             )}
           </div>
         </header>
 
-        {children}
+        {title ? (
+          <section className="mb-7 sb-fade-up">
+            <p className="text-xs font-black uppercase tracking-[0.34em] text-cyan-200/75">{eyebrow}</p>
+            <h1 className="mt-4 text-[3.4rem] font-black leading-[0.92] tracking-[-0.085em] text-white">
+              {title}
+            </h1>
+          </section>
+        ) : null}
 
-        <nav className="fixed bottom-4 left-1/2 z-40 flex w-[92%] max-w-md -translate-x-1/2 justify-around rounded-full bg-white/80 px-4 py-3 shadow-xl backdrop-blur-xl md:hidden">
-          <Link href="/" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
-            <span className="text-lg">💬</span>
-            Chat
-          </Link>
-          <Link href="/capture" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
-            <span className="text-lg">+</span>
-            Capture
-          </Link>
-          <Link href="/memory" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
-            <span className="text-lg">🧠</span>
-            Memory
-          </Link>
-          <Link href="/home" className="flex flex-col items-center gap-0.5 text-xs text-slate-600">
-            <span className="text-lg">⌂</span>
-            Home
-          </Link>
-        </nav>
-      </main>
-    </div>
+        {children}
+      </div>
+
+      <MobileBottomBar />
+    </main>
   );
 }

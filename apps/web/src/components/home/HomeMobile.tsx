@@ -18,99 +18,66 @@ function timeAgo(value?: string | null) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-const heroCards = [
-  {
-    title: "Ask your Brain",
-    body: "Search memory, tasks, Notion, writing, and projects from one chat.",
-    href: "/",
-    tag: "Chat",
-    image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    title: "Capture thoughts",
-    body: "Drop messy ideas and let AI structure them into useful memory.",
-    href: "/capture",
-    tag: "Capture",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
-  },
-  {
-    title: "Connect Notion",
-    body: "Create pages, todos, and daily plans in your workspace.",
-    href: "/settings/integrations",
-    tag: "Notion",
-    image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80",
-  },
+const topCards = [
+  { title: "Ask your Brain", body: "Search memory, tasks, Notion, and projects.", href: "/", tag: "AI", icon: "✦", gradient: "from-cyan-300/28 via-blue-400/10 to-white/5" },
+  { title: "Capture thoughts", body: "Save ideas, links, meetings, and reminders.", href: "/capture", tag: "Capture", icon: "+", gradient: "from-teal-300/24 via-cyan-300/10 to-white/5" },
+  { title: "Consolidate memory", body: "Create durable cards from raw notes.", href: "/memory", tag: "Memory", icon: "◇", gradient: "from-blue-300/24 via-cyan-300/10 to-white/5" },
 ];
 
-const sections = [
+const rows = [
   {
-    title: "Continue where you left off",
+    title: "Continue building",
     cards: [
-      ["Today Brief", "/", "/today Give me my Today Brief."],
-      ["Open Tasks", "/tasks", "Review and complete todos"],
-      ["Recent Memory", "/memory", "Search saved thoughts"],
+      { title: "Create a task", body: "Move a thought into action.", href: "/tasks", tag: "Tasks", icon: "✓" },
+      { title: "Connect Notion", body: "Sync pages and todos.", href: "/settings/integrations", tag: "Notion", icon: "▣" },
+      { title: "Projects", body: "Group work into spaces.", href: "/projects", tag: "Work", icon: "▤" },
     ],
   },
   {
-    title: "Important cards",
+    title: "Your personal OS",
     cards: [
-      ["Plan my day", "/", "Turn ideas into next actions"],
-      ["Write from notes", "/writing", "Clean messy writing"],
-      ["Project focus", "/projects", "Move work forward"],
+      { title: "Knowledge base", body: "Search saved knowledge.", href: "/knowledge", tag: "Search", icon: "⌕" },
+      { title: "Writing", body: "Clean messy notes.", href: "/writing", tag: "Draft", icon: "✎" },
+      { title: "Mood", body: "Track how you feel.", href: "/mood", tag: "Mood", icon: "◐" },
     ],
   },
 ];
 
-function HeroCard({ card, index }: { card: (typeof heroCards)[number]; index: number }) {
+function FeaturePoster({ card, large = false }: { card: { title: string; body: string; href: string; tag: string; icon: string; gradient?: string }; large?: boolean }) {
   return (
     <Link
       href={card.href}
-      className="relative h-[28rem] w-[19rem] shrink-0 overflow-hidden rounded-[2.1rem] border border-white/10 bg-white/5 shadow-2xl transition active:scale-[0.985]"
-      style={{ animationDelay: `${index * 70}ms` }}
+      className={`${large ? "h-[21rem] w-[18.5rem]" : "h-[15.5rem] w-[12.5rem]"} sb-card relative shrink-0 overflow-hidden rounded-[2rem] p-5 transition active:scale-[0.98]`}
     >
-      <img src={card.image} alt="" className="h-full w-full object-cover opacity-75" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
-      <div className="absolute left-5 right-5 top-5 flex items-center justify-between">
-        <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100 backdrop-blur">
+      <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient || "from-white/13 via-cyan-300/7 to-transparent"}`} />
+      <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-cyan-200/12 blur-2xl" />
+      <div className="relative flex items-center justify-between">
+        <span className="rounded-full bg-black/38 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-100/80">
           {card.tag}
         </span>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur">↗</span>
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/12 text-xl text-white">{card.icon}</span>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <h3 className="text-[2.25rem] font-semibold leading-[0.92] tracking-[-0.07em] text-white">
+      <div className="relative mt-auto flex h-full flex-col justify-end pb-2">
+        <h3 className={`${large ? "text-[2.35rem]" : "text-2xl"} font-black leading-[0.92] tracking-[-0.075em] text-white`}>
           {card.title}
         </h3>
-        <p className="mt-3 text-sm leading-6 text-white/62">{card.body}</p>
+        <p className="mt-3 line-clamp-2 text-sm leading-5 text-white/58">{card.body}</p>
       </div>
     </Link>
   );
 }
 
-function MiniCard({ title, body, href }: { title: string; body: string; href: string }) {
+function ActivityCard({ event }: { event: ActivityEvent }) {
   return (
-    <Link href={href} className="sb-soft-card h-36 w-40 shrink-0 rounded-[1.6rem] p-4 transition active:scale-[0.98]">
-      <div className="mb-7 h-9 w-9 rounded-2xl bg-gradient-to-br from-cyan-200 via-blue-200 to-violet-200" />
-      <h3 className="text-base font-semibold tracking-[-0.04em] text-white">{title}</h3>
-      <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/45">{body}</p>
-    </Link>
-  );
-}
-
-function ActivityStoryCard({ event }: { event: ActivityEvent }) {
-  return (
-    <article className="sb-soft-card min-h-[13rem] w-[17rem] shrink-0 rounded-[1.8rem] p-5">
+    <article className="sb-soft-panel min-h-[10.5rem] w-[16rem] shrink-0 rounded-[1.5rem] p-4">
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase text-white/55">
+        <span className="rounded-full bg-white/8 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-cyan-100/55">
           {event.source_type || event.event_type}
         </span>
         <span className="text-xs text-white/35">{timeAgo(event.created_at)}</span>
       </div>
-      <h3 className="mt-10 line-clamp-3 text-2xl font-semibold leading-tight tracking-[-0.05em] text-white">
-        {event.title}
-      </h3>
-      {event.description ? (
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-white/45">{event.description}</p>
-      ) : null}
+      <h3 className="mt-8 line-clamp-2 text-xl font-black leading-tight tracking-[-0.04em] text-white">{event.title}</h3>
+      {event.description ? <p className="mt-2 line-clamp-2 text-sm leading-5 text-white/45">{event.description}</p> : null}
     </article>
   );
 }
@@ -119,86 +86,70 @@ export function HomeMobile() {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const signedIn = isSignedIn();
   const user = getStoredUser();
+  const firstName = user?.name?.split(" ")[0] || "You";
 
   useEffect(() => {
     getRecentActivity().then(setEvents).catch(() => setEvents([]));
   }, []);
 
   return (
-    <main className="sb-shell">
-      <div className="mx-auto min-h-[100dvh] max-w-md px-5 pb-32 pt-[calc(env(safe-area-inset-top)+1.1rem)]">
+    <main className="sb-netflix-shell min-h-[100dvh] text-white">
+      <div className="mx-auto min-h-[100dvh] max-w-md px-5 pb-32 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
         <header className="flex items-center justify-between">
-          <Link href="/home">
-            <BrandLogo size="sm" showText />
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xl text-white">
-              ⌕
-            </Link>
-            {signedIn ? (
-              <Link href="/settings/integrations" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10 text-sm font-bold text-white">
-                {user?.picture ? <img src={user.picture} alt="Profile" className="h-full w-full object-cover" /> : "••"}
-              </Link>
+          <Link href="/home"><BrandLogo size="sm" wordmark /></Link>
+          <div className="flex items-center gap-3">
+            <Link href="/features" className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/8 text-xl backdrop-blur-xl">⌕</Link>
+            {user?.picture ? (
+              <img src={user.picture} alt="Profile" className="h-12 w-12 rounded-full border border-white/10 object-cover" />
+            ) : signedIn ? (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-200 text-sm font-black text-black">{firstName.charAt(0)}</div>
             ) : (
-              <Link href="/login" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
-                Sign in
-              </Link>
+              <Link href="/login" className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">Sign in</Link>
             )}
           </div>
         </header>
 
-        <section className="pt-10 sb-fade-up">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200/75">
-            For {user?.name?.split(" ")[0] || "you"}
-          </p>
-          <h1 className="mt-3 text-[3.55rem] font-semibold leading-[0.9] tracking-[-0.085em] text-white">
+        <section className="pt-12 sb-fade-up">
+          <p className="text-xs font-black uppercase tracking-[0.36em] text-cyan-200/75">For {firstName}</p>
+          <h1 className="mt-6 text-[4.25rem] font-black leading-[0.88] tracking-[-0.095em] text-white">
             Your personal AI workspace
           </h1>
-          <p className="mt-5 max-w-sm text-[15px] leading-7 text-white/54">
+          <p className="mt-6 max-w-sm text-xl leading-8 text-white/78">
             Capture thoughts, ask your memory, sync Notion, and move ideas into action.
           </p>
         </section>
 
-        {!signedIn ? (
-          <section className="mt-7 rounded-[1.8rem] border border-white/10 bg-white/[0.07] p-5">
-            <p className="text-lg font-semibold tracking-[-0.04em] text-white">Start with your private account.</p>
-            <p className="mt-2 text-sm leading-6 text-white/48">Save memory, connect Notion, and keep everything synced.</p>
-            <Link href="/onboarding" className="mt-5 inline-flex rounded-full bg-white px-5 py-3 text-sm font-black text-black">
-              Get started
-            </Link>
-          </section>
-        ) : null}
-
-        <section className="-mx-5 mt-8 flex gap-4 overflow-x-auto px-5 pb-4 no-scrollbar sb-card-scroll">
-          {heroCards.map((card, index) => <HeroCard key={card.title} card={card} index={index} />)}
+        <section className="-mx-5 mt-9 overflow-x-auto px-5 pb-5 no-scrollbar sb-card-scroll">
+          <div className="flex gap-4">
+            {topCards.map((card) => <FeaturePoster key={card.title} card={card} large />)}
+          </div>
         </section>
 
-        {sections.map((section) => (
-          <section key={section.title} className="mt-5">
-            <h2 className="mb-3 text-[1.35rem] font-semibold tracking-[-0.05em] text-white">{section.title}</h2>
-            <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-3 no-scrollbar">
-              {section.cards.map(([title, href, body]) => (
-                <MiniCard key={title} title={title} href={href} body={body} />
-              ))}
+        {rows.map((row) => (
+          <section key={row.title} className="mt-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-2xl font-black tracking-[-0.05em] text-white">{row.title}</h2>
+              <Link href="/features" className="text-sm font-bold text-cyan-100/62">See all</Link>
+            </div>
+            <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-4 no-scrollbar sb-card-scroll">
+              {row.cards.map((card) => <FeaturePoster key={card.title} card={card} />)}
             </div>
           </section>
         ))}
 
-        <section className="mt-6">
+        <section className="mt-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[1.35rem] font-semibold tracking-[-0.05em] text-white">Recent activity</h2>
-            <Link href="/" className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white/75">Ask</Link>
+            <h2 className="text-2xl font-black tracking-[-0.05em] text-white">Recent activity</h2>
+            <Link href="/" className="text-sm font-bold text-cyan-100/62">Ask</Link>
           </div>
-
-          <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-4 no-scrollbar sb-card-scroll">
-            {events.slice(0, 8).map((event) => <ActivityStoryCard key={event.id} event={event} />)}
+          <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-4 no-scrollbar sb-card-scroll">
+            {events.slice(0, 8).map((event) => <ActivityCard key={event.id} event={event} />)}
             {!events.length ? (
-              <div className="sb-soft-card min-h-[13rem] w-[17rem] shrink-0 rounded-[1.8rem] p-5">
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase text-white/55">Empty</span>
-                <h3 className="mt-10 text-2xl font-semibold leading-tight tracking-[-0.05em] text-white">No memory yet.</h3>
-                <p className="mt-3 text-sm leading-6 text-white/45">Capture something and it will appear here.</p>
-              </div>
+              <article className="sb-soft-panel min-h-[10.5rem] w-[16rem] shrink-0 rounded-[1.5rem] p-4">
+                <span className="rounded-full bg-white/8 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-cyan-100/55">Empty</span>
+                <h3 className="mt-8 text-xl font-black tracking-[-0.04em] text-white">No activity yet.</h3>
+                <p className="mt-2 text-sm leading-5 text-white/45">Capture something or ask your Brain.</p>
+              </article>
             ) : null}
           </div>
         </section>

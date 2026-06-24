@@ -2,11 +2,8 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { askAssistant, askBrain, getRecentActivity } from "@/lib/api";
 import { getStoredUser, isSignedIn, logout } from "@/lib/auth";
-import { useTheme } from "@/components/theme/ThemeProvider";
-import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ChatBubble } from "@/components/assistant/ChatBubble";
 import { CommandTray, insertCommandToken, shouldShowCommandTray } from "@/components/assistant/CommandTray";
 import { TypingBubble } from "@/components/assistant/TypingBubble";
@@ -14,16 +11,9 @@ import { NotionPageCard, SourceCards, TaskResultCard } from "@/components/assist
 import { TaskChoiceCards } from "@/components/assistant/TaskChoiceCards";
 import { TodoPageCard } from "@/components/assistant/TodoPageCard";
 import { SavedInsightsDrawer } from "@/components/assistant/SavedInsightsDrawer";
-import type {
-  AssistantResponse,
-  BrainAskResponse,
-  CreatedTaskCardData,
-  NotionPageCardData,
-  NotionTodoItemData,
-  NotionTodoPageData,
-  TaskChoice,
-  ActivityEvent,
-} from "@/lib/api";
+import { BrandLogo } from "@/components/brand/BrandLogo";
+import { MobileBottomBar } from "@/components/navigation/MobileBottomBar";
+import type { AssistantResponse, BrainAskResponse, CreatedTaskCardData, NotionPageCardData, NotionTodoItemData, NotionTodoPageData, TaskChoice, ActivityEvent } from "@/lib/api";
 
 type Message = {
   role: "user" | "assistant";
@@ -39,23 +29,21 @@ type Message = {
 const starterChips = [
   "/today Give me my Today Brief",
   "@memory What should I remember?",
-  "@notion Create a page from this idea",
-  "Create a task for today",
+  "/notion Create a task for today",
+  "Search my recent tasks",
 ];
 
-const actionItems: [string, string, string][] = [
-  ["Home", "/home", "Open your command center"],
-  ["Capture", "/capture", "Save any thought quickly"],
-  ["Memory", "/memory", "Browse saved memory"],
-  ["Tasks", "/tasks", "Review open work"],
-  ["Projects", "/projects", "See project spaces"],
-  ["Notion", "/settings/integrations", "Connect workspace"],
+const quickCards = [
+  { title: "Today Brief", body: "Summarize tasks, memory, and next action.", prompt: "/today Give me my Today Brief.", icon: "☀" },
+  { title: "Memory Search", body: "Ask across saved notes and context.", prompt: "@memory What did I capture recently?", icon: "◇" },
+  { title: "Notion Task", body: "Create a Notion-synced action item.", prompt: "/notion Create a task for today: review my Second Brain demo.", icon: "▣" },
 ];
 
 export function AssistantScreen() {
-  const router = useRouter();
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", content: "Hey — I’m your Second Brain. Ask me anything, search memory, or turn a thought into action." },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -67,12 +55,7 @@ export function AssistantScreen() {
 
   const user = getStoredUser();
   const signedIn = isSignedIn();
-  const hasStarted = messages.length > 0;
-
-  useEffect(() => {
-    const seen = typeof window !== "undefined" && localStorage.getItem("sb_onboarding_done") === "1";
-    if (!isSignedIn() && !seen) router.replace("/onboarding");
-  }, [router]);
+  const hasStarted = messages.length > 1;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,10 +67,7 @@ export function AssistantScreen() {
 
   function shouldUseBrainAsk(message: string) {
     const text = message.trim().toLowerCase();
-    return (
-      text.includes("@memory") || text.includes("@notion") || text.includes("@tasks") || text.includes("@writing") ||
-      text.startsWith("/memory") || text.startsWith("/today") || text.startsWith("/write")
-    );
+    return text.includes("@memory") || text.includes("@notion") || text.includes("@tasks") || text.includes("@writing") || text.startsWith("/memory") || text.startsWith("/today") || text.startsWith("/write");
   }
 
   function inferSourceHint(message: string) {
@@ -122,16 +102,13 @@ export function AssistantScreen() {
   async function sendMessage(text?: string) {
     const content = (text || input).trim();
     if (!content || loading) return;
+
     setInput("");
-    setTrayOpen(false);
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", content }]);
 
     try {
-      const res = shouldUseBrainAsk(content)
-        ? await askBrain(content, inferSourceHint(content))
-        : await askAssistant(content);
-
+      const res = shouldUseBrainAsk(content) ? await askBrain(content, inferSourceHint(content)) : await askAssistant(content);
       setMessages((prev) => [
         ...prev,
         {
@@ -154,6 +131,7 @@ export function AssistantScreen() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    setTrayOpen(false);
     sendMessage();
   }
 
@@ -170,44 +148,58 @@ export function AssistantScreen() {
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX === null) return;
     const endX = e.changedTouches[0].clientX;
-    if (touchStartX < 40 && endX - touchStartX > 80) setDrawerOpen(true);
+    const delta = endX - touchStartX;
+    if (touchStartX < 40 && delta > 80) setDrawerOpen(true);
     setTouchStartX(null);
   }
 
   return (
-    <main onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="sb-shell text-white">
+    <main onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="sb-shell min-h-[100dvh] text-white">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col">
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md px-4 pt-[calc(env(safe-area-inset-top)+0.9rem)]">
-          <div className="sb-glass flex items-center justify-between rounded-[1.6rem] px-3 py-2.5">
-            <Link href="/home" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-white">‹</Link>
-            <BrandLogo size="sm" showText />
-            <button onClick={() => setProfileOpen(true)} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm font-bold text-white" aria-label="Open profile">
-              {user?.picture ? <img src={user.picture} alt={user.name || "Profile"} className="h-full w-full object-cover" /> : "••"}
-            </button>
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto max-w-md bg-gradient-to-b from-[#030607] via-[#030607]/90 to-transparent px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1rem)] backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <Link href="/home"><BrandLogo size="sm" wordmark /></Link>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setDrawerOpen(true)} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/8 text-xl">⌕</button>
+              <button onClick={() => setProfileOpen(true)} className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/8 text-sm font-black">
+                {user?.picture ? <img src={user.picture} alt={user.name || "Profile"} className="h-full w-full object-cover" /> : "••"}
+              </button>
+            </div>
           </div>
         </header>
 
-        <section className="flex-1 overflow-y-auto px-4 pb-36 pt-28">
+        <section className="flex-1 overflow-y-auto px-5 pb-52 pt-28">
           {!hasStarted ? (
-            <div className="flex min-h-[calc(100dvh-15rem)] flex-col justify-center pb-8 text-center sb-fade-up">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200/70">Second Brain chat</p>
-              <h1 className="mx-auto mt-4 max-w-sm text-[3.35rem] font-semibold leading-[0.92] tracking-[-0.085em] text-white">
+            <div className="pb-8 sb-fade-up">
+              <p className="text-xs font-black uppercase tracking-[0.34em] text-cyan-200/70">AI Brain</p>
+              <h1 className="mt-6 text-[3.75rem] font-black leading-[0.88] tracking-[-0.095em] text-white">
                 What can I help you remember?
               </h1>
-              <p className="mx-auto mt-5 max-w-xs text-[15px] leading-6 text-white/48">
-                Ask, capture, search memory, create tasks, or send things to Notion.
+              <p className="mt-5 text-base leading-7 text-white/55">
+                Ask, capture, search memory, create tasks, or send work to Notion.
               </p>
 
               {!signedIn ? (
-                <Link href="/login" className="mx-auto mt-7 inline-flex rounded-full bg-white px-5 py-3 text-sm font-black text-black">
-                  Continue with Google
+                <Link href="/login" className="mt-6 block rounded-[1.5rem] bg-white p-5 text-black">
+                  <p className="text-base font-black">Sign in to save memory</p>
+                  <p className="mt-2 text-sm leading-5 text-black/58">Keep tasks, notes, mood, projects, and Notion sync private.</p>
                 </Link>
               ) : null}
 
-              <div className="mt-8 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+              <div className="-mx-5 mt-8 flex gap-3 overflow-x-auto px-5 pb-4 no-scrollbar sb-card-scroll">
+                {quickCards.map((card) => (
+                  <button key={card.title} onClick={() => sendMessage(card.prompt)} className="sb-card h-48 w-40 shrink-0 rounded-[1.7rem] p-4 text-left active:scale-[0.98]">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-black">{card.icon}</span>
+                    <h3 className="mt-10 text-2xl font-black leading-none tracking-[-0.06em] text-white">{card.title}</h3>
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/48">{card.body}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {starterChips.map((chip) => (
-                  <button key={chip} onClick={() => sendMessage(chip)} className="shrink-0 rounded-full border border-white/10 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-white/75 active:scale-95">
-                    {chip.replace("/today ", "")}
+                  <button key={chip} onClick={() => sendMessage(chip)} className="shrink-0 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-bold text-white/68 active:scale-95">
+                    {chip}
                   </button>
                 ))}
               </div>
@@ -219,7 +211,7 @@ export function AssistantScreen() {
               <div key={index}>
                 <ChatBubble role={message.role} content={message.content} />
                 {message.role === "assistant" ? (
-                  <div className="mr-auto max-w-[88%]">
+                  <div className="mr-auto max-w-[92%]">
                     {message.created_task ? <TaskResultCard task={message.created_task} /> : null}
                     {message.task_choices?.length ? <TaskChoiceCards tasks={message.task_choices} onCompleted={addAssistantMessage} /> : null}
                     {message.notion_page ? <NotionPageCard page={message.notion_page} /> : null}
@@ -234,10 +226,10 @@ export function AssistantScreen() {
           </div>
         </section>
 
-        <footer className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-gradient-to-t from-[#050608] via-[#050608]/96 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-8">
+        <footer className="fixed inset-x-0 z-40 mx-auto max-w-md px-5 pb-3 bottom-[calc(env(safe-area-inset-bottom)+5.8rem)]">
           {trayOpen ? <CommandTray input={input} onSelect={insertCommand} /> : null}
-          <div className="flex items-center gap-3 rounded-[1.7rem] border border-white/10 bg-white/[0.07] p-2 shadow-2xl backdrop-blur-2xl">
-            <button onClick={() => setActionsOpen(true)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-2xl text-black active:scale-95" aria-label="Open actions">+</button>
+          <div className="flex items-end gap-3 rounded-[2rem] border border-white/10 bg-[#0b1113]/94 p-2 shadow-2xl backdrop-blur-2xl">
+            <button onClick={() => setActionsOpen(true)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-2xl font-light text-black">+</button>
             <form onSubmit={submit} className="flex min-w-0 flex-1 items-center">
               <input
                 id="assistant-input"
@@ -247,10 +239,10 @@ export function AssistantScreen() {
                   setInput(value);
                   setTrayOpen(shouldShowCommandTray(value));
                 }}
-                placeholder="Ask anything..."
-                className="min-w-0 flex-1 bg-transparent px-1 text-[15.5px] font-medium text-white outline-none placeholder:text-white/28"
+                placeholder="Ask your Brain..."
+                className="min-w-0 flex-1 bg-transparent px-2 py-3 text-[15.5px] font-medium text-white outline-none placeholder:text-white/32"
               />
-              <button type="submit" disabled={loading || !input.trim()} className="ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-black disabled:opacity-25" aria-label="Send">↑</button>
+              <button type="submit" disabled={loading || !input.trim()} className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-100 text-xl text-black disabled:opacity-25">↑</button>
             </form>
           </div>
         </footer>
@@ -259,24 +251,33 @@ export function AssistantScreen() {
         {profileOpen ? <ProfileSheet onClose={() => setProfileOpen(false)} signedIn={signedIn} user={user} /> : null}
         <SavedInsightsDrawer open={drawerOpen} events={activityEvents.filter((event) => ["notion_page_created", "writing_saved", "memory_card_created"].includes(event.event_type))} onClose={() => setDrawerOpen(false)} />
       </div>
+      <MobileBottomBar />
     </main>
   );
 }
 
 function ActionsSheet({ onClose }: { onClose: () => void }) {
+  const items: [string, string][] = [
+    ["Capture anything", "/capture"],
+    ["All features", "/features"],
+    ["Memory cards", "/memory"],
+    ["Tasks", "/tasks"],
+    ["Connect Notion", "/settings/integrations"],
+    ["Projects", "/projects"],
+    ["Knowledge base", "/knowledge"],
+    ["Mood", "/mood"],
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-4 backdrop-blur-sm">
-      <div className="mx-auto w-full max-w-md rounded-t-[2rem] border border-white/10 bg-[#090c10] p-5 shadow-2xl sb-fade-up">
+    <div className="fixed inset-0 z-[60] flex items-end bg-black/55 p-4 backdrop-blur-sm">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] border border-white/10 bg-[#0d1316] p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-xl font-semibold tracking-[-0.05em] text-white">Actions</p>
-          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/70">Close</button>
+          <p className="text-lg font-black text-white">Features</p>
+          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm font-bold text-white/65">Close</button>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {actionItems.map(([label, href, body]) => (
-            <Link key={href} href={href} onClick={onClose} className="rounded-[1.35rem] border border-white/10 bg-white/[0.055] p-4 text-left active:scale-[0.98]">
-              <p className="font-semibold text-white">{label}</p>
-              <p className="mt-1 text-xs leading-5 text-white/42">{body}</p>
-            </Link>
+        <div className="grid gap-2">
+          {items.map(([label, href]) => (
+            <Link key={href} href={href} onClick={onClose} className="rounded-2xl bg-white/7 px-4 py-3 text-sm font-bold text-white/78">{label}</Link>
           ))}
         </div>
       </div>
@@ -284,47 +285,28 @@ function ActionsSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ProfileSheet({
-  onClose,
-  signedIn,
-  user,
-}: {
-  onClose: () => void;
-  signedIn: boolean;
-  user: { name?: string; email?: string; picture?: string } | null;
-}) {
-  const { theme, toggleTheme } = useTheme();
-
+function ProfileSheet({ onClose, signedIn, user }: { onClose: () => void; signedIn: boolean; user: { name?: string; email?: string; picture?: string } | null }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-4 backdrop-blur-sm">
-      <div className="mx-auto w-full max-w-md rounded-t-[2rem] border border-white/10 bg-[#090c10] p-5 shadow-2xl sb-fade-up">
+    <div className="fixed inset-0 z-[60] flex items-end bg-black/55 p-4 backdrop-blur-sm">
+      <div className="mx-auto w-full max-w-md rounded-t-[2rem] border border-white/10 bg-[#0d1316] p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-xl font-semibold tracking-[-0.05em] text-white">Profile</p>
-          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/70">Close</button>
+          <p className="text-lg font-black text-white">Profile</p>
+          <button onClick={onClose} className="rounded-full bg-white/10 px-3 py-1 text-sm font-bold text-white/65">Close</button>
         </div>
-
         {signedIn ? (
-          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-4">
+          <div className="rounded-[1.5rem] bg-white/7 p-4">
             <div className="flex items-center gap-3">
               {user?.picture ? <img src={user.picture} alt={user.name || "Profile"} className="h-12 w-12 rounded-full object-cover" /> : <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-black text-black">U</div>}
               <div className="min-w-0">
-                <p className="truncate font-semibold text-white">{user?.name || "Signed in"}</p>
+                <p className="truncate font-black text-white">{user?.name || "Signed in"}</p>
                 <p className="truncate text-xs text-white/42">{user?.email}</p>
               </div>
             </div>
+            <button onClick={logout} className="mt-4 w-full rounded-full bg-white px-4 py-3 text-sm font-black text-black">Log out</button>
           </div>
         ) : (
           <Link href="/login" className="block rounded-full bg-white px-5 py-3 text-center text-sm font-black text-black">Continue with Google</Link>
         )}
-
-        <div className="mt-4 grid gap-2">
-          <button onClick={toggleTheme} className="rounded-2xl bg-white/[0.055] px-4 py-3 text-left text-sm font-semibold text-white/72">
-            {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          </button>
-          <Link href="/settings/integrations" className="rounded-2xl bg-white/[0.055] px-4 py-3 text-sm font-semibold text-white/72">Connect Notion</Link>
-          <Link href="/imports/instagram" className="rounded-2xl bg-white/[0.055] px-4 py-3 text-sm font-semibold text-white/72">Upload Instagram export</Link>
-          {signedIn ? <button onClick={logout} className="rounded-2xl bg-white/[0.055] px-4 py-3 text-left text-sm font-semibold text-red-200">Logout</button> : null}
-        </div>
       </div>
     </div>
   );

@@ -4,24 +4,41 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
-  { label: "Home", href: "/home", icon: "⌂" },
-  { label: "Chat", href: "/", icon: "✦" },
-  { label: "Memory", href: "/memory", icon: "◫" },
-  { label: "Tasks", href: "/tasks", icon: "✓" },
-  { label: "Profile", href: "/settings/integrations", icon: "◉" },
+  { label: "Home", href: "/home", icon: "⌂", matches: ["/home"] },
+  { label: "AI", href: "/", icon: "✦", matches: ["/"] },
+  {
+    label: "Features",
+    href: "/features",
+    icon: "▦",
+    matches: [
+      "/features",
+      "/capture",
+      "/memory",
+      "/tasks",
+      "/settings",
+      "/projects",
+      "/knowledge",
+      "/writing",
+      "/mood",
+      "/imports",
+    ],
+  },
 ];
 
 export function MobileBottomBar() {
   const pathname = usePathname();
 
+  function isActive(tab: (typeof tabs)[number]) {
+    if (tab.href === "/") return pathname === "/";
+    return tab.matches.some((match) => pathname === match || pathname.startsWith(`${match}/`));
+  }
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md px-4 pb-[calc(env(safe-area-inset-bottom)+0.8rem)]">
-      <div className="sb-glass rounded-[1.7rem] p-1.5">
-        <div className="grid grid-cols-5 gap-1">
+    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      <div className="sb-bottom-blur rounded-[2rem] border border-white/10 p-1.5 shadow-[0_18px_70px_rgba(0,0,0,0.55)]">
+        <div className="grid grid-cols-3 gap-1.5">
           {tabs.map((tab) => {
-            const active =
-              pathname === tab.href ||
-              (tab.href !== "/" && pathname.startsWith(tab.href));
+            const active = isActive(tab);
 
             return (
               <Link
@@ -29,12 +46,12 @@ export function MobileBottomBar() {
                 href={tab.href}
                 className={
                   active
-                    ? "rounded-[1.2rem] bg-white px-2 py-2.5 text-center text-[11px] font-bold text-black transition-all duration-300"
-                    : "rounded-[1.2rem] px-2 py-2.5 text-center text-[11px] font-semibold text-white/45 transition-all duration-300 active:scale-95"
+                    ? "flex flex-col items-center justify-center rounded-[1.55rem] bg-white px-4 py-3 text-black shadow-xl transition-all duration-300"
+                    : "flex flex-col items-center justify-center rounded-[1.55rem] px-4 py-3 text-white/48 transition-all duration-300 active:scale-95"
                 }
               >
-                <span className="block text-base leading-none">{tab.icon}</span>
-                <span className="mt-1 block truncate">{tab.label}</span>
+                <span className="text-lg leading-none">{tab.icon}</span>
+                <span className="mt-1 text-[11px] font-bold">{tab.label}</span>
               </Link>
             );
           })}

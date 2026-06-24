@@ -1,96 +1,95 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 
 const slides = [
   {
-    eyebrow: "Capture",
-    title: "Save every thought before it disappears.",
-    body: "Drop ideas, links, notes, tasks, and messy thoughts into one private AI memory.",
-    image:
-      "https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=1200&q=80",
+    tag: "Capture",
+    title: "Drop every thought into one place.",
+    body: "Tasks, ideas, meeting notes, links, and reminders become structured memory.",
+    icon: "+",
+    gradient: "from-cyan-300/30 via-sky-400/16 to-transparent",
   },
   {
-    eyebrow: "Ask",
-    title: "Chat with your own memory, not a blank model.",
-    body: "Search your notes, tasks, projects, writing, and connected knowledge through one simple chat.",
-    image:
-      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80",
+    tag: "Ask",
+    title: "Chat with your personal context.",
+    body: "Ask about memory, tasks, projects, writing, and Notion without digging.",
+    icon: "✦",
+    gradient: "from-blue-400/30 via-cyan-300/14 to-transparent",
   },
   {
-    eyebrow: "Sync",
-    title: "Connect Notion and turn ideas into action.",
-    body: "Create pages, todos, daily briefs, and project plans without leaving your Second Brain.",
-    image:
-      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1200&q=80",
+    tag: "Act",
+    title: "Turn messy ideas into actions.",
+    body: "Create tasks, sync Notion, and keep your workspace moving cleanly.",
+    icon: "✓",
+    gradient: "from-teal-300/28 via-cyan-300/12 to-transparent",
   },
 ];
 
 export function OnboardingScreen() {
   const [index, setIndex] = useState(0);
-  const router = useRouter();
   const slide = slides[index];
   const last = index === slides.length - 1;
 
-  function finish() {
-    localStorage.setItem("sb_onboarding_done", "1");
-    router.push("/login");
+  function next() {
+    if (!last) setIndex((value) => value + 1);
   }
 
   return (
-    <main className="sb-shell min-h-[100dvh] px-5 py-6">
-      <section className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-md flex-col">
+    <main className="sb-shell flex min-h-[100dvh] items-center justify-center px-5 py-8 text-white">
+      <section className="mx-auto flex min-h-[88dvh] w-full max-w-md flex-col">
         <header className="flex items-center justify-between">
-          <BrandLogo size="sm" showText />
-          <button
-            onClick={finish}
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/60"
-          >
+          <BrandLogo size="sm" wordmark />
+          <Link href="/login" className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-bold text-white/70">
             Skip
-          </button>
+          </Link>
         </header>
 
-        <div className="flex flex-1 flex-col justify-center py-7 sb-fade-up" key={slide.title}>
-          <div className="relative h-[24rem] overflow-hidden rounded-[2.2rem] border border-white/10 bg-white/5 shadow-2xl">
-            <img src={slide.image} alt="Second Brain onboarding" className="h-full w-full object-cover opacity-80" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200/90">
-                {slide.eyebrow}
-              </p>
-              <h1 className="mt-3 text-[2.45rem] font-semibold leading-[0.95] tracking-[-0.07em] text-white">
-                {slide.title}
-              </h1>
-              <p className="mt-4 text-[15px] leading-6 text-white/64">{slide.body}</p>
+        <div className="flex flex-1 flex-col justify-center py-10">
+          <div className={`sb-card relative overflow-hidden rounded-[2.2rem] p-6 bg-gradient-to-br ${slide.gradient}`}>
+            <div className="flex h-60 items-center justify-center rounded-[1.8rem] border border-white/10 bg-black/24">
+              <div className="flex h-28 w-28 items-center justify-center rounded-[2rem] bg-white text-6xl font-black text-black shadow-2xl">
+                {slide.icon}
+              </div>
             </div>
+
+            <p className="mt-8 text-xs font-black uppercase tracking-[0.34em] text-cyan-100/75">{slide.tag}</p>
+            <h1 className="mt-4 text-[2.65rem] font-black leading-[0.95] tracking-[-0.075em] text-white">
+              {slide.title}
+            </h1>
+            <p className="mt-4 text-base leading-7 text-white/62">{slide.body}</p>
           </div>
 
-          <div className="mt-7 flex items-center justify-center gap-2">
-            {slides.map((item, dotIndex) => (
+          <div className="mt-8 flex justify-center gap-2">
+            {slides.map((item, itemIndex) => (
               <button
                 key={item.title}
-                onClick={() => setIndex(dotIndex)}
-                className={
-                  dotIndex === index
-                    ? "h-2.5 w-8 rounded-full bg-white"
-                    : "h-2.5 w-2.5 rounded-full bg-white/25"
-                }
-                aria-label={`Go to onboarding slide ${dotIndex + 1}`}
+                onClick={() => setIndex(itemIndex)}
+                className={itemIndex === index ? "h-2 w-7 rounded-full bg-white" : "h-2 w-2 rounded-full bg-white/30"}
+                aria-label={`Go to slide ${itemIndex + 1}`}
               />
             ))}
           </div>
         </div>
 
-        <footer className="pb-[calc(env(safe-area-inset-bottom)+0.8rem)]">
-          <button
-            onClick={() => (last ? finish() : setIndex((value) => value + 1))}
-            className="sb-accent-button w-full rounded-[1.4rem] px-5 py-4 text-base font-black active:scale-[0.99]"
+        {last ? (
+          <Link
+            href="/login"
+            onClick={() => localStorage.setItem("second_brain_onboarded", "true")}
+            className="rounded-[1.35rem] bg-white px-5 py-4 text-center text-base font-black text-black active:scale-[0.98]"
           >
-            {last ? "Get started" : "Continue"}
+            Get started
+          </Link>
+        ) : (
+          <button
+            onClick={next}
+            className="rounded-[1.35rem] bg-white px-5 py-4 text-base font-black text-black active:scale-[0.98]"
+          >
+            Continue
           </button>
-        </footer>
+        )}
       </section>
     </main>
   );

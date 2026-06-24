@@ -13,9 +13,7 @@ export function CaptureScreen() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
-
     setLoading(true);
-
     try {
       const res = await captureAnything(text);
       setResult(res);
@@ -26,50 +24,27 @@ export function CaptureScreen() {
   }
 
   return (
-    <AppShell title="Capture">
-      <section className="mb-8">
-        <h1 className="text-5xl font-semibold tracking-tight">Capture Anything</h1>
-        <p className="mt-3 text-sm text-slate-600">
-          Paste a task, idea, link, meeting note, or question. Second Brain will route it.
-        </p>
-      </section>
-
-      <GlassCard>
+    <AppShell title="Capture anything" eyebrow="Save to brain">
+      <GlassCard className="mb-8 sb-fade-up">
         <form onSubmit={submit} className="space-y-4">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder='Try: "Remind me to submit paper Sunday"'
-            className="min-h-52 w-full rounded-3xl border border-sky-100 bg-white/80 px-5 py-4 text-sm leading-6 outline-none"
+            className="min-h-56 w-full rounded-[1.6rem] border border-white/10 bg-black/28 px-5 py-4 text-base leading-7 text-white outline-none placeholder:text-white/30 focus:border-cyan-100/35"
           />
-
-          <button className="w-full rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white">
+          <button className="w-full rounded-[1.25rem] bg-white px-5 py-4 text-base font-black text-black active:scale-[0.98] disabled:opacity-50" disabled={loading}>
             {loading ? "Capturing..." : "Save to Second Brain →"}
           </button>
         </form>
       </GlassCard>
 
       {result ? (
-        <GlassCard className="mt-6">
-          <p className="text-xs uppercase tracking-wide text-sky-600">
-            {result.capture_type}
-          </p>
-
-          <h2 className="mt-2 text-2xl font-semibold">
-            {result.summary || "Captured"}
-          </h2>
-
-          {result.suggested_next_action ? (
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Next: {result.suggested_next_action}
-            </p>
-          ) : null}
-
-          {result.answer?.answer ? (
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-              {result.answer.answer}
-            </p>
-          ) : null}
+        <GlassCard className="sb-fade-up">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100/62">{result.capture_type}</p>
+          <h2 className="mt-3 text-3xl font-black tracking-[-0.06em] text-white">{result.summary || "Captured"}</h2>
+          {result.suggested_next_action ? <p className="mt-3 text-sm leading-6 text-white/52">Next: {result.suggested_next_action}</p> : null}
+          {result.answer?.answer ? <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-white/60">{result.answer.answer}</p> : null}
         </GlassCard>
       ) : null}
     </AppShell>

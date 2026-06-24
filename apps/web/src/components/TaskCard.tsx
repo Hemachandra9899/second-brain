@@ -22,51 +22,20 @@ export function TaskCard({ task, onDone, onDelete, onSyncNotion }: TaskCardProps
     <GlassCard className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-600">
-            {task.source || "Second Brain"}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold leading-snug text-slate-900">
-            {task.title}
-          </h3>
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-100/62">{task.source || "Second Brain"}</p>
+          <h3 className="mt-2 text-xl font-black leading-snug tracking-[-0.05em] text-white">{task.title}</h3>
         </div>
-
-        <span className="rounded-full bg-sky-100 px-3 py-1 text-xs text-sky-700">
-          {task.status || "Todo"}
-        </span>
+        <span className="rounded-full bg-cyan-100/14 px-3 py-1 text-xs font-bold text-cyan-100">{task.status || "Todo"}</span>
       </div>
-
-      {task.description ? (
-        <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-          {task.description}
-        </p>
-      ) : null}
-
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      {task.description ? <p className="line-clamp-3 text-sm leading-6 text-white/50">{task.description}</p> : null}
+      <div className="flex items-center justify-between text-xs font-medium text-white/42">
         <span>{task.priority || "Normal"}</span>
         <span>{task.due_date ? `Due ${task.due_date}` : "No date"}</span>
       </div>
-
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <button
-          onClick={() => onDone?.(task)}
-          className="rounded-full bg-emerald-100 px-3 py-2 text-xs font-medium text-emerald-700"
-        >
-          Done
-        </button>
-
-        <button
-          onClick={() => onSyncNotion?.(task)}
-          className="rounded-full bg-sky-100 px-3 py-2 text-xs font-medium text-sky-700"
-        >
-          Notion
-        </button>
-
-        <button
-          onClick={() => onDelete?.(task)}
-          className="rounded-full bg-rose-100 px-3 py-2 text-xs font-medium text-rose-700"
-        >
-          Delete
-        </button>
+        <button onClick={() => onDone?.(task)} className="rounded-full bg-emerald-100/14 px-3 py-2 text-xs font-bold text-emerald-100">Done</button>
+        <button onClick={() => onSyncNotion?.(task)} className="rounded-full bg-cyan-100/14 px-3 py-2 text-xs font-bold text-cyan-100">Notion</button>
+        <button onClick={() => onDelete?.(task)} className="rounded-full bg-rose-100/14 px-3 py-2 text-xs font-bold text-rose-100">Delete</button>
       </div>
     </GlassCard>
   );
